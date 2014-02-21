@@ -301,6 +301,12 @@ module.exports.binaryTree = {
 
 module.exports.reducedTree = {
   
+  invalid: function(test) {
+    test.strictEqual(new ExpressionTree().reduce(), undefined);
+    
+    test.done();
+  },
+  
   general: function(test){
     var tree = new ExpressionTree('a + b + c + d').reduce(),
         root = tree.getRoot();
@@ -336,6 +342,100 @@ module.exports.reducedTree = {
     test.strictEqual(root.childs[3] instanceof Leaf, true);
     test.strictEqual(root.childs[3].head.type, 'literal');
     test.strictEqual(root.childs[3].head.value, 'd');
+    
+    test.done();
+  },
+  
+  func: function(test){
+    var tree = new ExpressionTree('sin(a + b + c + d)').reduce(),
+        root = tree.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 1);
+    test.strictEqual(root instanceof Node, true);
+    test.strictEqual(root instanceof Leaf, false);
+    test.strictEqual(root.head.type, 'func');
+    test.strictEqual(root.head.value, 'sin');
+    
+    root = root.childs[0];
+    
+    test.strictEqual(root.childs.length, 4);
+    test.strictEqual(root instanceof Node, true);
+    test.strictEqual(root instanceof Leaf, false);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '+');
+  
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0] instanceof Node, false);
+    test.strictEqual(root.childs[0] instanceof Leaf, true);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'a');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1] instanceof Node, false);
+    test.strictEqual(root.childs[1] instanceof Leaf, true);
+    test.strictEqual(root.childs[1].head.type, 'literal');
+    test.strictEqual(root.childs[1].head.value, 'b');
+    
+    test.strictEqual(root.childs[2].childs, undefined);
+    test.strictEqual(root.childs[2] instanceof Node, false);
+    test.strictEqual(root.childs[2] instanceof Leaf, true);
+    test.strictEqual(root.childs[2].head.type, 'literal');
+    test.strictEqual(root.childs[2].head.value, 'c');
+    
+    test.strictEqual(root.childs[3].childs, undefined);
+    test.strictEqual(root.childs[3] instanceof Node, false);
+    test.strictEqual(root.childs[3] instanceof Leaf, true);
+    test.strictEqual(root.childs[3].head.type, 'literal');
+    test.strictEqual(root.childs[3].head.value, 'd');
+    
+    test.done();
+  },
+  
+  partial: function(test){
+    var tree = new ExpressionTree('a + b * c + d').reduce(),
+        root = tree.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 3);
+    test.strictEqual(root instanceof Node, true);
+    test.strictEqual(root instanceof Leaf, false);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '+');
+  
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0] instanceof Node, false);
+    test.strictEqual(root.childs[0] instanceof Leaf, true);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'a');
+    
+    test.strictEqual(root.childs[2].childs, undefined);
+    test.strictEqual(root.childs[2] instanceof Node, false);
+    test.strictEqual(root.childs[2] instanceof Leaf, true);
+    test.strictEqual(root.childs[2].head.type, 'literal');
+    test.strictEqual(root.childs[2].head.value, 'd');
+    
+    root = root.childs[1];
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root instanceof Node, true);
+    test.strictEqual(root instanceof Leaf, false);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '*');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0] instanceof Node, false);
+    test.strictEqual(root.childs[0] instanceof Leaf, true);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'b');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1] instanceof Node, false);
+    test.strictEqual(root.childs[1] instanceof Leaf, true);
+    test.strictEqual(root.childs[1].head.type, 'literal');
+    test.strictEqual(root.childs[1].head.value, 'c');
     
     test.done();
   }
