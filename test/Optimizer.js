@@ -33,3 +33,38 @@ module.exports.addition = {
   }
   
 };
+
+module.exports.multiplication = {
+  
+  test1: function(test) {
+     var expression = new Expression('b * b * b * a').reduce().optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '*');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'literal');
+    test.strictEqual(root.childs[1].head.value, 'a');
+    
+    root = root.childs[0];
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '^');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'b');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 3);
+    
+    test.done();
+  }
+  
+};

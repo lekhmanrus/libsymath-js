@@ -69,6 +69,51 @@ rules.push(function constantsAddition(root) {
   return modified;
 });
 
+// b * b * b * a -> b^3 * a
+rules.push(function groupingByMultiply(root) {
+  var modified = applyToChilds(root, groupingByMultiply);
+  
+  if(root.head.type === 'operator' && root.head.value === '*') {
+    var i, result = 0,
+        current,
+        literals = { };
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      if(root.childs[i].head.type === 'literal') {
+        current = root.childs[i].head.value;
+        
+        if(literals[current]) {
+          literals[current]++;
+          root.childs.splice(i, 1);
+          --i;
+        } else {
+          literals[current] = 1;
+        }
+      }
+    }
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      if(root.childs[i].head.type === 'literal') {
+        var name = root.childs[i].head.value;
+        current = root.childs[i];
+        
+        if(literals[name] > 1) {
+          current.head = { type: 'operator', value: '^' };
+          
+          current.childs = [
+            new Leaf({ type: 'literal', value: name }),
+            new Leaf({ type: 'constant', value: literals[name] })
+          ];
+          
+          modified = true;
+        }
+      }
+    }
+  }
+  
+  return modified;
+});
+
 
 rules.push(function stripDepth(root) {
   var modified = applyToChilds(root, stripDepth);
