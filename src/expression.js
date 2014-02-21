@@ -14,10 +14,10 @@ function ExpressionTree(expressionString) {
   var tokens = new Lexer(expressionString).tokens();
   
   this.privateRoot_ = undefined;
-  this.buildBinaryExpressionTree(tokens);
+  this.buildBinaryExpressionTree_(tokens);
 }
 
-ExpressionTree.prototype.reversePolishNotation = function(tokens) {
+ExpressionTree.prototype.reversePolishNotation_ = function(tokens) {
   var getOperationPriority = function(value) {
     if(value === '+' || value === '-') {
       return 1;
@@ -82,11 +82,9 @@ ExpressionTree.prototype.reversePolishNotation = function(tokens) {
   return result;
 };
 
-ExpressionTree.prototype.checkReversePolishNotation = function(output) {
+ExpressionTree.prototype.checkReversePolishNotation_ = function(output) {
   var stack = [],
       i, error;
-  
-  //console.log(output);
   
   for(i = 0; i < output.length; ++i) {
     if(/literal|constant|complex/.test(output[i].type)) {
@@ -129,7 +127,7 @@ ExpressionTree.prototype.checkReversePolishNotation = function(output) {
   }
 };
 
-ExpressionTree.prototype.checkBrackets = function(tokens) {
+ExpressionTree.prototype.checkBrackets_ = function(tokens) {
   var depth = 0,
       i;
   
@@ -154,17 +152,17 @@ ExpressionTree.prototype.checkBrackets = function(tokens) {
   return depth === 0;
 };
 
-ExpressionTree.prototype.buildBinaryExpressionTree = function(tokens) {
-  if(!this.checkBrackets(tokens)) {
+ExpressionTree.prototype.buildBinaryExpressionTree_ = function(tokens) {
+  if(!this.checkBrackets_(tokens)) {
     throw new SyntaxError('expression error: brackets count mismatch!');
   }
   
-  var rawExpression = this.reversePolishNotation(tokens),
+  var rawExpression = this.reversePolishNotation_(tokens),
       i, node,
       buffer = [],
       op = /func|operator/;
   
-  this.checkReversePolishNotation(rawExpression);
+  this.checkReversePolishNotation_(rawExpression);
   
   for(i = 0; i < rawExpression.length; ++i) {
     if(!op.test(rawExpression[i].type)) {      
@@ -188,6 +186,16 @@ ExpressionTree.prototype.buildBinaryExpressionTree = function(tokens) {
   }
   
   this.privateRoot_ = buffer[0];
+};
+
+ExpressionTree.prototype.reduce = function() {
+  if(!this.privateRoot_) {
+    return;
+  }
+  
+  this.privateRoot_.reduce();
+  
+  return this;
 };
 
 ExpressionTree.prototype.getRoot = function() {
