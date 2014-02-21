@@ -2,9 +2,10 @@
 /*global module */
 'use strict';
 
-var Lexer = require('./lexer'),
-    Node  = require('./tree').Node,
-    Leaf  = require('./tree').Leaf;
+var Lexer     = require('./lexer'),
+    Optimizer = require('./optimizer'),
+    Node      = require('./tree').Node,
+    Leaf      = require('./tree').Leaf;
 
 function ExpressionTree(expressionString) {
   if(!expressionString) {
@@ -189,11 +190,29 @@ ExpressionTree.prototype.buildBinaryExpressionTree_ = function(tokens) {
 };
 
 ExpressionTree.prototype.reduce = function() {
-  if(!this.privateRoot_) {
+  if(!this.privateRoot_ || this.reduced) {
     return;
   }
   
   this.privateRoot_.reduce();
+  this.reduced = true;
+  
+  return this;
+};
+
+ExpressionTree.prototype.optimize = function() {
+  if(!this.privateRoot_ || this.optimized) {
+    return;
+  }
+  
+  if(!this.reduced) {
+    this.reduce();
+  }
+  
+  var optimizer = new Optimizer(this.privateRoot_);
+  
+  optimizer.process();
+  this.optimized = true;
   
   return this;
 };
