@@ -26,6 +26,6 @@
   "devDependencies": {
     "nodeunit": "~0.8.4",
     "jscoverage": "~0.3.8",
-    "coveralls": "~2.7.1"
+    "coveralls": "~2.8.0"
   }
 }
