@@ -2,7 +2,8 @@
 /*global module */
 'use strict';
 
-var Expression = require('..').Expression;
+var Expression = require('..').Expression,
+    Optimizer  = require('../src/optimizer');
 
 module.exports.optimizeTwice = function(test) {
   var expression = new Expression('2 + 3 * 3').optimize(),
@@ -30,6 +31,10 @@ module.exports.optimizeInvalid = function(test) {
   
   expression.optimize();
   test.strictEqual(expression.getRoot(), undefined);
+  
+  test.throws(function() {
+    var optimizer = new Optimizer();
+  }, ReferenceError);
   
   test.done();
 };

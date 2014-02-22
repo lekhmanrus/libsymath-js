@@ -7,7 +7,7 @@ var Node = require('./tree').Node,
 
 function Optimizer(root) {
   if(!root) {
-    return;
+    throw new ReferenceError('root is not defined!');
   }
   
   this.root_ = root;
