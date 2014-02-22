@@ -4,10 +4,40 @@
 
 var Expression = require('..').Expression;
 
+module.exports.optimizeTwice = function(test) {
+  var expression = new Expression('2 + 3 * 3').optimize(),
+      root = expression.getRoot();
+  
+  test.notStrictEqual(root, undefined);
+  
+  test.strictEqual(root.childs, undefined);
+  test.strictEqual(root.head.type, 'constant');
+  test.strictEqual(root.head.value, 11);
+  
+  expression.optimize();
+  root = expression.getRoot();
+  
+  test.strictEqual(root.childs, undefined);
+  test.strictEqual(root.head.type, 'constant');
+  test.strictEqual(root.head.value, 11);
+  
+  test.done();
+};
+
+module.exports.optimizeInvalid = function(test) {
+  var expression = new Expression();
+  test.strictEqual(expression.getRoot(), undefined);
+  
+  expression.optimize();
+  test.strictEqual(expression.getRoot(), undefined);
+  
+  test.done();
+};
+
 module.exports.addition = {
   
   test1: function(test) {
-    var expression = new Expression('2 + 3 + 5').reduce().optimize(),
+    var expression = new Expression('2 + 3 + 5').optimize(),
         root = expression.getRoot();
     
     test.notStrictEqual(root, undefined);
@@ -20,7 +50,7 @@ module.exports.addition = {
   },
   
   test2: function(test) {
-    var expression = new Expression('(5 + 2) + (2 + (6 + 6))').reduce().optimize(),
+    var expression = new Expression('(5 + 2) + (2 + (6 + 6))').optimize(),
         root = expression.getRoot();
     
     test.notStrictEqual(root, undefined);
@@ -37,7 +67,7 @@ module.exports.addition = {
 module.exports.multiplication = {
   
   test1: function(test) {
-    var expression = new Expression('b * b * b * a').reduce().optimize(),
+    var expression = new Expression('b * b * b * a').optimize(),
         root = expression.getRoot();
     
     test.notStrictEqual(root, undefined);
@@ -68,7 +98,7 @@ module.exports.multiplication = {
   },
   
   test2: function(test) {
-    var expression = new Expression('2 * 1').reduce().optimize(),
+    var expression = new Expression('2 * 1').optimize(),
         root = expression.getRoot();
     
     test.notStrictEqual(root, undefined);
@@ -80,7 +110,7 @@ module.exports.multiplication = {
   },
   
   test3: function(test) {
-    var expression = new Expression('(2 + 3) * 5').reduce().optimize(),
+    var expression = new Expression('(2 + 3) * 5').optimize(),
         root = expression.getRoot();
     
     test.notStrictEqual(root, undefined);
@@ -93,7 +123,7 @@ module.exports.multiplication = {
   },
   
   test4: function(test) {
-    var expression = new Expression('2 * 0').reduce().optimize(),
+    var expression = new Expression('2 * 0').optimize(),
         root = expression.getRoot();
     
     test.notStrictEqual(root, undefined);
@@ -105,7 +135,7 @@ module.exports.multiplication = {
   },
   
   test5: function(test) {
-    var expression = new Expression('sin(5 * cos(x)^x) * 0').reduce().optimize(),
+    var expression = new Expression('sin(5 * cos(x)^x) * 0').optimize(),
         root = expression.getRoot();
     
     test.notStrictEqual(root, undefined);
@@ -117,7 +147,7 @@ module.exports.multiplication = {
   },
   
   test6: function(test) {
-    var expression = new Expression('2 + 3 * 0').reduce().optimize(),
+    var expression = new Expression('2 + 3 * 0').optimize(),
         root = expression.getRoot();
     
     test.notStrictEqual(root, undefined);
@@ -129,7 +159,7 @@ module.exports.multiplication = {
   },
   
   test7: function(test) {    
-    var expression = new Expression('2 + 3 * 3').reduce().optimize(),
+    var expression = new Expression('2 + 3 * 3').optimize(),
         root = expression.getRoot();
     
     test.notStrictEqual(root, undefined);
