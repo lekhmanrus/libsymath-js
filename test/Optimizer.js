@@ -37,7 +37,7 @@ module.exports.addition = {
 module.exports.multiplication = {
   
   test1: function(test) {
-     var expression = new Expression('b * b * b * a').reduce().optimize(),
+    var expression = new Expression('b * b * b * a').reduce().optimize(),
         root = expression.getRoot();
     
     test.notStrictEqual(root, undefined);
@@ -64,6 +64,44 @@ module.exports.multiplication = {
     test.strictEqual(root.childs[1].head.type, 'constant');
     test.strictEqual(root.childs[1].head.value, 3);
     
+    test.done();
+  },
+  
+  test2: function(test) {
+    var expression = new Expression('2 * 1').reduce().optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 2);
+    test.done();
+  },
+  
+  test3: function(test) {
+    debugger;
+    var expression = new Expression('(2 + 3) * 5').reduce().optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 25);
+    
+    test.done();
+  },
+  
+  test4: function(test) {
+    var expression = new Expression('2 * 0').reduce().optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 0);
     test.done();
   }
   

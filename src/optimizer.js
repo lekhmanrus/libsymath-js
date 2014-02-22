@@ -23,7 +23,7 @@ Optimizer.prototype.process = function() {
     modified = false;
     
     for(i = 0; i < rules.length; ++i) {
-      modified = modified || rules[i](this.root_);
+      modified = rules[i](this.root_) || modified;
     }
   } while(modified);
 };
@@ -61,7 +61,34 @@ rules.push(function constantsAddition(root) {
     
     modified = modified || (ops > 1);
     
-    if(result !== 0 || root.childs.length === 0) {
+    if(ops > 1 || root.childs.length === 0) {
+      root.childs.push(new Leaf({ type: 'constant', value: result }));
+    }
+  }
+  
+  return modified;
+});
+
+// (2 + 3) * 5  -> 25
+// 2 * 1        -> 2
+rules.push(function constantsMultiplication(root) {
+  var modified = applyToChilds(root, constantsMultiplication);
+  
+  if(root.head.type === 'operator' && root.head.value === '*') {
+    var i, result = 1, ops = 0;
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      if(root.childs[i].head.type === 'constant') {
+        result *= root.childs[i].head.value;
+        root.childs.splice(i, 1);
+        ++ops;
+        --i;
+      }
+    }
+    
+    modified = modified || (ops > 1);
+    
+    if(ops > 0 || root.childs.length === 0) {
       root.childs.push(new Leaf({ type: 'constant', value: result }));
     }
   }
@@ -70,8 +97,8 @@ rules.push(function constantsAddition(root) {
 });
 
 // b * b * b * a -> b^3 * a
-rules.push(function groupingByMultiply(root) {
-  var modified = applyToChilds(root, groupingByMultiply);
+rules.push(function groupingByMultiplication(root) {
+  var modified = applyToChilds(root, groupingByMultiplication);
   
   if(root.head.type === 'operator' && root.head.value === '*') {
     var i, result = 0,
@@ -120,7 +147,8 @@ rules.push(function stripDepth(root) {
   
   if(root.head.type === 'operator' && root.childs.length === 1) {
     root.head = root.childs[0].head;
-    root.childs = undefined;
+    root.childs = root.childs[0].childs;
+    modified = true;
   }
   
   return modified;
