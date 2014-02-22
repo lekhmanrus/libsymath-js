@@ -61,13 +61,44 @@ rules.push(function constantsAddition(root) {
     
     modified = modified || (ops > 1);
     
-    if(ops > 1 || root.childs.length === 0) {
+    if(ops > 0 || root.childs.length === 0) {
       root.childs.push(new Leaf({ type: 'constant', value: result }));
     }
   }
   
   return modified;
 });
+
+
+// a * 0 -> 0
+// 5 * 0 -> 0
+rules.push(function multiplicationByZero(root) {
+  var modified = applyToChilds(root, multiplicationByZero);
+  
+  if(root.head.type === 'operator' && root.head.value === '*') {
+    var i, hasNull = false;
+    
+    for(i = 0; i < root.childs.length && !hasNull; ++i) {
+      var current = root.childs[i];
+      
+      if(current.head.type === 'constant' && current.head.value === 0) {
+        hasNull = true;
+      }
+    }
+    
+    if(hasNull) {
+      root.head.type = 'constant';
+      root.head.value = 0;
+      root.head.loc = undefined;
+      root.childs = undefined;
+      
+      modified = true;
+    }
+  }
+  
+  return modified;
+});
+
 
 // (2 + 3) * 5  -> 25
 // 2 * 1        -> 2
@@ -95,6 +126,7 @@ rules.push(function constantsMultiplication(root) {
   
   return modified;
 });
+
 
 // b * b * b * a -> b^3 * a
 rules.push(function groupingByMultiplication(root) {

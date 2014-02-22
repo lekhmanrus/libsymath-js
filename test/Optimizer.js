@@ -80,7 +80,6 @@ module.exports.multiplication = {
   },
   
   test3: function(test) {
-    debugger;
     var expression = new Expression('(2 + 3) * 5').reduce().optimize(),
         root = expression.getRoot();
     
@@ -102,6 +101,42 @@ module.exports.multiplication = {
     test.strictEqual(root.childs, undefined);
     test.strictEqual(root.head.type, 'constant');
     test.strictEqual(root.head.value, 0);
+    test.done();
+  },
+  
+  test5: function(test) {
+    var expression = new Expression('sin(5 * cos(x)^x) * 0').reduce().optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 0);
+    test.done();
+  },
+  
+  test6: function(test) {
+    var expression = new Expression('2 + 3 * 0').reduce().optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 2);
+    test.done();
+  },
+  
+  test7: function(test) {    
+    var expression = new Expression('2 + 3 * 3').reduce().optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 11);
     test.done();
   }
   
