@@ -174,13 +174,71 @@ rules.push(function groupingByMultiplication(root) {
 });
 
 
+// 2 / 4 / 2 -> (2 * 2) / 4
+// 6 / a / 3 / a -> (6 * 3) / (a * a)
+rules.push(function fractionsNormalization(root) {
+  var modified = applyToChilds(root, fractionsNormalization);
+  
+  if(root.head.type === 'operator' && root.head.value === '/') {
+    var i, lhs = [], rhs = [];
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      if(i % 2 === 0) {
+        lhs.push(root.childs[i]);
+      }
+      else {
+        rhs.push(root.childs[i]);
+      }
+    }
+    
+    modified = modified || lhs.length > 1 || rhs.length > 1;
+    
+    if(lhs.length > 1) {
+      lhs = new Node({
+        type: 'operator',
+        value: '*'
+      }, lhs);
+    }
+    else {
+      lhs = lhs[0];
+    }
+    
+    if(rhs.length > 1) {
+      rhs = new Node({
+        type: 'operator',
+        value: '*'
+      }, rhs);
+    }
+    else {
+      rhs = rhs[0];
+    }
+    
+    root.childs = [ lhs, rhs ];
+  }
+  
+  return modified;
+});
+
+// TODO: fractionsReduction
+
 rules.push(function stripDepth(root) {
-  var modified = applyToChilds(root, stripDepth);
+  var modified = applyToChilds(root, stripDepth),
+      i;
   
   if(root.head.type === 'operator' && root.childs.length === 1) {
     root.head = root.childs[0].head;
     root.childs = root.childs[0].childs;
     modified = true;
+  }
+  
+  if(root.childs) {
+    for(i = 0; i < root.childs.length; ++i) {
+      var current = root.childs[i];
+      if(current.head.type === 'operator' && current.childs && current.childs.length === 0) {
+        root.childs.splice(i, 1);
+        --i;
+      }
+    }
   }
   
   return modified;
