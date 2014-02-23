@@ -301,6 +301,39 @@ module.exports.division = {
     test.strictEqual(root.childs[1].head.value, 2);
     
     test.done();
+  },
+  
+  test4: function(test) {
+    var expression = new Expression('5 / 5 / 5').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 5);
+    
+    test.done();
+  },
+  
+  test5: function(test) {
+    var expression = new Expression('a / b / b').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'literal');
+    test.strictEqual(root.head.value, 'a');
+    
+    test.done();
+  },
+  
+  test6: function(test) {
+    var expression = new Expression('(3 * a - 2 * a) / a').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 1);
+    
+    test.done();
   }
   
 };

@@ -1,4 +1,4 @@
-/*jslint white: true, node: true, plusplus: true, vars: true, nomen: true */
+/*jslint white: true, node: true, plusplus: true, vars: true, nomen: true, sub: true */
 /*global module */
 'use strict';
 
@@ -33,7 +33,7 @@ function applyToChilds(root, callback) {
   
   if(root.childs) {
     for(i = 0; i < root.childs.length; ++i) {
-      modified = modified || callback(root.childs[i]);
+      modified = callback(root.childs[i]) || modified;
     }
   }
   
@@ -220,6 +220,38 @@ rules.push(function fractionsNormalization(root) {
 });
 
 // TODO: fractionsReduction
+rules.push(function fractionsReduction(root) {
+  var modified = applyToChilds(root, fractionsReduction);
+  
+  if(root.head.type === 'operator' && root.head.value === '/') {
+    var lhs = root.childs[0].getSeparableSymbols(),
+        rhs = root.childs[1].getSeparableSymbols(),
+        diff = [], i, j;
+    
+    for(i = 0; i < lhs.length; ++i) {
+      var found = false;
+      
+      for(j = 0; !found && j < rhs.length; ++j) {
+        found = rhs[j].type === lhs[i].type && rhs[j].value === lhs[i].value;
+      }
+      
+      if(found) {
+        diff.push(lhs[i]);
+      }
+    }
+    
+    if(diff.length > 0) {
+      for(i = 0; i < diff.length; ++i) {
+        root.removeSeparableSymbol(diff[i]);
+      }
+      
+      modified = true;
+    }
+  }
+  
+  return modified;
+});
+
 
 rules.push(function stripDepth(root) {
   var modified = applyToChilds(root, stripDepth),
@@ -227,6 +259,7 @@ rules.push(function stripDepth(root) {
   
   if(root.head.type === 'operator' && root.childs.length === 1) {
     root.head = root.childs[0].head;
+    root['__proto__'] = root.childs[0]['__proto__'];
     root.childs = root.childs[0].childs;
     modified = true;
   }
