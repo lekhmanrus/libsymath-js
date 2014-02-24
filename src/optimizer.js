@@ -70,6 +70,40 @@ rules.push(function constantsAddition(root) {
 });
 
 
+// 1 - 2 -> -1
+// 2 - 1 -> 1
+rules.push(function constantsSubtraction(root) {
+  var modified = applyToChilds(root, constantsSubtraction);
+  
+  if(root.head.type === 'operator' && root.head.value === '-') {
+    var i, result = 0, ops = 0;
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      if(root.childs[i].head.type === 'constant') {
+        if(ops === 0) {
+          result = root.childs[i].head.value;
+        }
+        else {
+          result -= root.childs[i].head.value;
+        }
+        
+        root.childs.splice(i, 1);
+        ++ops;
+        --i;
+      }
+    }
+    
+    modified = modified || (ops > 1);
+    
+    if(ops > 0 || root.childs.length === 0) {
+      root.childs.push(new Leaf({ type: 'constant', value: result }));
+    }
+  }
+  
+  return modified;
+});
+
+
 // a * 0 -> 0
 // 5 * 0 -> 0
 rules.push(function multiplicationByZero(root) {
@@ -219,13 +253,31 @@ rules.push(function fractionsNormalization(root) {
   return modified;
 });
 
-// TODO: fractionsReduction
+function uniqueTokens(tokens) {
+  var tmp = [], i, j;
+  
+  for(i = 0; i < tokens.length; ++i) {
+    var found = false;
+    
+    for(j = 0; !found && j < tmp.length; ++j) {
+      found = tmp[j].type === tokens[i].type && tmp[j].value === tokens[i].value;
+    }
+    
+    if(!found) {
+      tmp.push(tokens[i]);
+    }
+  }
+  
+  return tmp;
+}
+
+// (a * a) / (b * a) -> a / b
 rules.push(function fractionsReduction(root) {
   var modified = applyToChilds(root, fractionsReduction);
   
   if(root.head.type === 'operator' && root.head.value === '/') {
-    var lhs = root.childs[0].getSeparableSymbols(),
-        rhs = root.childs[1].getSeparableSymbols(),
+    var lhs = uniqueTokens(root.childs[0].getSeparableSymbols()),
+        rhs = uniqueTokens(root.childs[1].getSeparableSymbols()),
         diff = [], i, j;
     
     for(i = 0; i < lhs.length; ++i) {
@@ -242,7 +294,7 @@ rules.push(function fractionsReduction(root) {
     
     if(diff.length > 0) {
       for(i = 0; i < diff.length; ++i) {
-        root.removeSeparableSymbol(diff[i]);
+        root.removeSeparableSymbol(JSON.parse(JSON.stringify(diff[i])), true);
       }
       
       modified = true;
@@ -252,6 +304,48 @@ rules.push(function fractionsReduction(root) {
   return modified;
 });
 
+rules.push(function unnecessaryConstantStrip(root) {
+  var modified = applyToChilds(root, unnecessaryConstantStrip),
+      i;
+  
+  if(root.head.type === 'operator') {
+    
+    if(root.head.value === '/' && root.childs[1]) {
+      if(root.childs[1].head.type === 'constant' && root.childs[1].head.value === 1) {
+        root['__proto__'] = root.childs[0]['__proto__'];
+        root.head = root.childs[0].head;
+        root.childs = root.childs[0].childs;
+      }
+    }
+    
+    else if(root.head.value === '*') {
+      for(i = 0; i < root.childs.length; ++i) {
+        if(root.childs[i].head.type === 'constant' && root.childs[i].head.value === 1) {
+          root.childs.splice(i, 1);
+          --i;
+        }
+      }
+    }
+    
+    else if(['+', '-'].indexOf(root.head.value) !== -1) {
+      for(i = 0; i < root.childs.length; ++i) {
+        if(root.childs[i].head.type === 'constant' && root.childs[i].head.value === 0) {
+          root.childs.splice(i, 1);
+          --i;
+        }
+      }
+    }
+    
+    else if(root.head.value === '^' && root.childs[1]) {
+      if(root.childs[1].head.type === 'constant' && root.childs[1].head.value === 1) {
+        root['__proto__'] = root.childs[0]['__proto__'];
+        root.head = root.childs[0].head;
+        root.childs = root.childs[0].childs;
+      }
+    }
+    
+  }
+});
 
 rules.push(function stripDepth(root) {
   var modified = applyToChilds(root, stripDepth),
