@@ -385,6 +385,104 @@ module.exports.division = {
     test.strictEqual(root.head.value, 'a');
     
     test.done();
+  },
+  
+  test10: function(test) {
+    var expression = new Expression('4 / 2').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 2);
+    
+    test.done();
+  },
+  
+  test11: function(test) {
+    var expression = new Expression('4 * a/ 2').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '*');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 2);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'literal');
+    test.strictEqual(root.childs[1].head.value, 'a');
+    
+    test.done();
+  },
+  
+  test12: function(test) {
+    var expression = new Expression('2 / 4').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 1);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 2);
+    
+    test.done();
+  },
+  
+  test13: function(test) {
+    var expression = new Expression('2 / 5').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 2);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 5);
+    
+    test.done();
+  },
+  
+  test14: function(test) {
+    var expression = new Expression('4 / 1').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 4);
+    
+    test.done();
+  },
+  
+  test15: function(test) {
+    var expression = new Expression('14 / 21').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 2);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 3);
+    
+    test.done();
   }
   
 };

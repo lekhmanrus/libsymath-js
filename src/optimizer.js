@@ -39,6 +39,23 @@ function applyToChilds(root, callback) {
   
   return modified;
 }
+function uniqueTokens(tokens) {
+  var tmp = [], i, j;
+  
+  for(i = 0; i < tokens.length; ++i) {
+    var found = false;
+    
+    for(j = 0; !found && j < tmp.length; ++j) {
+      found = tmp[j].type === tokens[i].type && tmp[j].value === tokens[i].value;
+    }
+    
+    if(!found) {
+      tmp.push(tokens[i]);
+    }
+  }
+  
+  return tmp;
+}
 
 // RULES:
 
@@ -253,23 +270,6 @@ rules.push(function fractionsNormalization(root) {
   return modified;
 });
 
-function uniqueTokens(tokens) {
-  var tmp = [], i, j;
-  
-  for(i = 0; i < tokens.length; ++i) {
-    var found = false;
-    
-    for(j = 0; !found && j < tmp.length; ++j) {
-      found = tmp[j].type === tokens[i].type && tmp[j].value === tokens[i].value;
-    }
-    
-    if(!found) {
-      tmp.push(tokens[i]);
-    }
-  }
-  
-  return tmp;
-}
 
 // (a * a) / (b * a) -> a / b
 rules.push(function fractionsReduction(root) {
@@ -304,6 +304,11 @@ rules.push(function fractionsReduction(root) {
   return modified;
 });
 
+
+// a * 1 -> a
+// a / 1 -> a
+// a ^ 1 -> a
+// a + 0 -> a
 rules.push(function unnecessaryConstantStrip(root) {
   var modified = applyToChilds(root, unnecessaryConstantStrip),
       i;
@@ -346,6 +351,16 @@ rules.push(function unnecessaryConstantStrip(root) {
     
   }
 });
+
+
+// 2 / 4 -> 1 / 2
+// 14 / 21 -> 2 / 3
+rules.push(function fractionConstantsReduction(root) {
+  // TODO
+  
+  return false;
+});
+
 
 rules.push(function stripDepth(root) {
   var modified = applyToChilds(root, stripDepth),
