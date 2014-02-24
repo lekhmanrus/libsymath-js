@@ -231,6 +231,29 @@ module.exports.binaryTree = {
     test.strictEqual(root.childs[1].head.type, 'literal');
     test.strictEqual(root.childs[1].head.value, 'd');
     
+    tree = new ExpressionTree('2 - 5');
+    root = tree.getRoot();
+
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root instanceof Node, true);
+    test.strictEqual(root instanceof Leaf, false);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '-');
+
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0] instanceof Node, false);
+    test.strictEqual(root.childs[0] instanceof Leaf, true);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 2);
+
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1] instanceof Node, false);
+    test.strictEqual(root.childs[1] instanceof Leaf, true);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 5);
+
     test.done();
   },
   
