@@ -79,84 +79,56 @@ Leaf.prototype.getSeparableSymbols = function() {
   return [ this.head ];
 };
 
-function removeSeparableSymbol(node, symbol) {
-  var removeOnce = function(node, symbol) {
-    var i;
+Node.prototype.divide = function(root, symbol) {  
+  var i = 0, divided = false;
+  
+  if(this.head.type === 'operator') {
     
-    for(i = 0; i < node.childs.length; ++i) {
-      if(node.childs[i].head.type === symbol.type && node.childs[i].head.value === symbol.value) {
-        node.childs[i].head.type  = 'constant';
-        node.childs[i].head.value = 1;
-        return true;
+    if(['+', '-'].indexOf(this.head.value) !== -1) {
+      divided = true;
+      
+      while(i < this.childs.length) {
+        divided = this.childs[i].divide(this, symbol) && divided;
+        ++i;
       }
       
-      else {
-        if(node.childs[i].removeSeparableSymbol(symbol)) {
-          return true;
-        }
-      }
-    }
-  };
-  
-  var removeAll = function(node, symbol) {
-    var i;
-    
-    for(i = 0; i < node.childs.length; ++i) {
-      if(node.childs[i].head.type === symbol.type && node.childs[i].head.value === symbol.value) {
-        node.childs[i].head.type  = 'constant';
-        node.childs[i].head.value = 1;
-      }
-      
-      else {
-        node.childs[i].removeSeparableSymbol(symbol);
-      }
+      return divided;
     }
     
-    return true;
-  };
-  
-  if(node.head.type === 'operator') {
-    if(['+', '-'].indexOf(node.head.value) !== -1) {
-      return removeAll(node, symbol);
-    }
-    
-    else if(node.head.value === '^') {
-      node.childs[1].head.value -= 1;
+    else if(this.head.value === '^') {
+      this.childs[1].head.value -= 1;
       return true;
     }
     
     else {
-      return removeOnce(node, symbol);
+      while(i < this.childs.length && !divided) {
+        divided = this.childs[i].divide(this, symbol);
+        ++i;
+      }
+      
+      return divided;
     }
-  }
-}
-
-function removeSeparableSymbolRoot(node, symbol) {
-  var i;
-  
-  for(i = 0; i < node.childs.length; ++i) {
-    if(node.childs[i].head.type === symbol.type && node.childs[i].head.value === symbol.value) {
-      node.childs[i].head.type  = 'constant';
-      node.childs[i].head.value = 1;
-    }
-    
-    else {
-      node.childs[i].removeSeparableSymbol(symbol);
-    }
-  }
-}
-
-Node.prototype.removeSeparableSymbol = function(symbol, isRoot) {
-  if(isRoot) {
-    removeSeparableSymbolRoot(this, symbol);
-  }
-  
-  else {
-    return removeSeparableSymbol(this, symbol);
   }
 };
 
-Leaf.prototype.removeSeparableSymbol = function(symbol) { };
+Leaf.prototype.divide = function(root, symbol) {
+  if(this.head.type !== symbol.type) {
+    return false;
+  }
+  
+  if(this.head.type === 'constant' && (this.head.value % symbol.value) === 0) {
+    this.head.value /= symbol.value;
+    return true;
+  }
+  
+  if(this.head.type === 'literal' && this.head.value === symbol.value) {
+    var i = root.childs.indexOf(this);
+    root.childs.splice(i, 1);
+    return true;
+  }
+  
+  return false;
+};
 
 module.exports.Node = Node;
 module.exports.Leaf = Leaf;

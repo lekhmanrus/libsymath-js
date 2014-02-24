@@ -294,7 +294,14 @@ rules.push(function fractionsReduction(root) {
     
     if(diff.length > 0) {
       for(i = 0; i < diff.length; ++i) {
-        root.removeSeparableSymbol(JSON.parse(JSON.stringify(diff[i])), true);
+        var obj = JSON.parse(JSON.stringify(diff[i]));
+        
+        if(!root.childs[0].divide(root, obj)) {
+          throw new Error('Internal Error: fractionsReduction(0)');
+        }
+        if(!root.childs[1].divide(root, obj)) {
+          throw new Error('Internal Error: fractionsReduction(1)');
+        }
       }
       
       modified = true;
