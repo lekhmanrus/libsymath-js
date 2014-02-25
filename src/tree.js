@@ -190,7 +190,7 @@ Node.prototype.getSimpleMultPair = function() {
   else if(this.childs[0].head.type === 'literal' && this.childs[1].head.type === 'constant') {
     return {
       literal: this.childs[0].head.value,
-      constant: this.childs[1].head.type
+      constant: this.childs[1].head.value
     };
   }
 };

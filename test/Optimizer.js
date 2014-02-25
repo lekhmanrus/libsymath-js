@@ -105,6 +105,79 @@ module.exports.addition = {
     test.strictEqual(root.childs[1].head.value, 7);
     
     test.done();
+  },
+  
+  test5: function(test) {
+    var expression = new Expression('(5 * a + 2 * a) / a').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 7);
+    
+    test.done();
+  },
+  
+  test6: function(test) {
+    var expression = new Expression('(5 * a - 6 * a) / a').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, -1);
+    
+    test.done();
+  },
+  
+  test7: function(test) {
+    var expression = new Expression('(5 * a - 6 * a)').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '*');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'a');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, -1);
+    
+    test.done();
+  },
+  
+  test8: function(test) {
+    var expression = new Expression('(5 * a - 5 * a) / a').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 0);
+    
+    test.done();
+  },
+  
+  test9: function(test) {
+    var expression = new Expression('5 * a - 5 * a').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 0);
+    
+    test.done();
   }
   
 };

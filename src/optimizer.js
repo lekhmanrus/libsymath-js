@@ -417,23 +417,20 @@ rules.push(function fractionConstantsReduction(root) {
 
 // 2 * a + 3 * a -> 5 * a
 rules.push(function groupLiterals(root) {
-  var modified = applyToChilds(root, groupLiterals);
+  var modified = applyToChilds(root, groupLiterals),
+      i, pair, current,
+      literals = { };
+  
   if(root.head.type === 'operator' && root.head.value === '+') {
-    var i, result = 0,
-        current, pair,
-        literals = { };
-    
     for(i = 0; i < root.childs.length; ++i) {
       pair = root.childs[i].getSimpleMultPair();
       if(pair) {
-        current = pair.literal;
-        
-        if(literals[current]) {
-          literals[current] += pair.constant;
+        if(literals[pair.literal]) {
+          literals[pair.literal] += pair.constant;
           root.childs.splice(i, 1);
           --i;
         } else {
-          literals[current] = pair.constant;
+          literals[pair.literal] = pair.constant;
         }
       }
     }
@@ -443,14 +440,31 @@ rules.push(function groupLiterals(root) {
       
       if(pair) {
         current = root.childs[i].childs;
-        
-        if(current[0].head.type === 'constant') {
-          current[0].head.value = literals[pair.literal];
+        current[current[0].head.type === 'constant' ? 0 : 1].head.value = literals[pair.literal];
+      }
+    }
+  }
+  
+  else if(root.head.type === 'operator' && root.head.value === '-') {
+    for(i = 0; i < root.childs.length; ++i) {
+      pair = root.childs[i].getSimpleMultPair();
+      if(pair) {
+        if(literals[pair.literal]) {
+          literals[pair.literal] -= pair.constant;
+          root.childs.splice(i, 1);
+          --i;
+        } else {
+          literals[pair.literal] = pair.constant;
         }
-        
-        else {
-          current[1].head.value = literals[pair.literal];
-        }
+      }
+    }
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      pair = root.childs[i].getSimpleMultPair();
+      
+      if(pair) {
+        current = root.childs[i].childs;
+        current[current[0].head.type === 'constant' ? 0 : 1].head.value = literals[pair.literal];
       }
     }
   }
@@ -467,6 +481,16 @@ rules.push(function stripDepth(root) {
     root.head = root.childs[0].head;
     root['__proto__'] = root.childs[0]['__proto__'];
     root.childs = root.childs[0].childs;
+    modified = true;
+  }
+  
+  if(root.head.type === 'operator' && root.childs.length === 0) {
+    root.head = {
+      type: 'constant',
+      value: 0
+    };
+    root['__proto__'] = Leaf.prototype;
+    root.childs = undefined;
     modified = true;
   }
   
