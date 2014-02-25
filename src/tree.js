@@ -171,5 +171,33 @@ Leaf.prototype.divide = function(root, symbol) {
   return false;
 };
 
+Node.prototype.getSimpleMultPair = function() {
+  if(this.head.type !== 'operator' || this.head.value !== '*') {
+    return false;
+  }
+  
+  if(this.childs.length !== 2) {
+    return false;
+  }
+  
+  if(this.childs[0].head.type === 'constant' && this.childs[1].head.type === 'literal') {
+    return {
+      literal: this.childs[1].head.value,
+      constant: this.childs[0].head.type
+    };
+  }
+  
+  else if(this.childs[0].head.type === 'literal' && this.childs[1].head.type === 'constant') {
+    return {
+      literal: this.childs[0].head.value,
+      constant: this.childs[1].head.type
+    };
+  }
+};
+
+Leaf.prototype.getSimpleMultPair = function() {
+  return false;
+};
+
 module.exports.Node = Node;
 module.exports.Leaf = Leaf;

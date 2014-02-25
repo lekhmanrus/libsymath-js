@@ -411,7 +411,51 @@ rules.push(function fractionConstantsReduction(root) {
     }
   }
   
-  return false;
+  return modified;
+});
+
+
+// 2 * a + 3 * a -> 5 * a
+rules.push(function groupLiterals(root) {
+  var modified = applyToChilds(root, groupLiterals);
+  if(root.head.type === 'operator' && root.head.value === '+') {
+    var i, result = 0,
+        current, pair,
+        literals = { };
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      pair = root.childs[i].getSimpleMultPair();
+      if(pair) {
+        current = pair.literal;
+        
+        if(literals[current]) {
+          literals[current] += pair.constant;
+          root.childs.splice(i, 1);
+          --i;
+        } else {
+          literals[current] = pair.constant;
+        }
+      }
+    }
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      pair = root.childs[i].getSimpleMultPair();
+      
+      if(pair) {
+        current = root.childs[i].childs;
+        
+        if(current[0].head.type === 'constant') {
+          current[0].head.value = literals[pair.literal];
+        }
+        
+        else {
+          current[1].head.value = literals[pair.literal];
+        }
+      }
+    }
+  }
+  
+  return modified;
 });
 
 
