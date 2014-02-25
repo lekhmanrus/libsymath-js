@@ -176,6 +176,14 @@ module.exports.binaryTree = {
       var tree = new ExpressionTree('f()');
     }, SyntaxError);
     
+    test.throws(function() {
+      var tree = new ExpressionTree('5 a');
+    }, SyntaxError);
+    
+    test.throws(function() {
+      var tree = new ExpressionTree('33 * c/ (25 - 25)');
+    }, Error);
+    
     test.done();
   },
   
