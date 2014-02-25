@@ -22,9 +22,11 @@ Node.prototype.reduce = function() {
       this.childs = this.childs.slice(0, i).concat(this.childs[i].childs).concat(this.childs.slice(i + 1));
     }
   }
+  
+  return this;
 };
 
-Leaf.prototype.reduce = function() { };
+Leaf.prototype.reduce = function() { return this; };
 
 Node.prototype.getSeparableSymbols = function(isExtended) {
   if(this.head.type !== 'operator') {
@@ -38,6 +40,10 @@ Node.prototype.getSeparableSymbols = function(isExtended) {
     return e.type === 'constant';
   };
   var gcd = function gcd(n1, n2) {
+    if(n1 === 0 || n2 === 0) {
+      return 1;
+    }
+    
     if(n1 === n2) {
       return n1;
     }
@@ -94,12 +100,15 @@ Node.prototype.getSeparableSymbols = function(isExtended) {
       tmp[i] = tmp[i][0];
     }
     
-    var result = JSON.parse(JSON.stringify(tmp[0]));
-    for(i = 1; i < tmp.length; ++i) {
-      result.value = gcd(result.value, tmp[i].value);
+    if(tmp.length === 0) {
+      return [];
     }
     
-    //console.log(result);
+    var result = JSON.parse(JSON.stringify(tmp[0]));
+    for(i = 1; i < tmp.length; ++i) {
+      result.value = gcd(Math.abs(result.value), Math.abs(tmp[i].value));
+    }
+    
     return [ result ];
   };
   
@@ -197,6 +206,29 @@ Node.prototype.getSimpleMultPair = function() {
 
 Leaf.prototype.getSimpleMultPair = function() {
   return false;
+};
+
+Node.prototype.clone = function() {
+  var childs = new Array(this.childs.length),
+      i;
+  
+  for(i = 0; i < this.childs.length; ++i) {
+    childs[i] = this.childs[i].clone();
+  }
+  
+  return new Node({
+    type: this.head.type,
+    value: this.head.value,
+    loc: this.head.loc
+  }, childs);
+};
+
+Leaf.prototype.clone = function() {
+  return new Leaf({
+    type: this.head.type,
+    value: this.head.value,
+    loc: this.head.loc
+  });
 };
 
 module.exports.Node = Node;

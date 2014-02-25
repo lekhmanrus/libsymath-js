@@ -294,19 +294,37 @@ rules.push(function unnecessaryConstantStrip(root) {
   
   if(root.head.type === 'operator') {
     
-    if(root.head.value === '/' && root.childs[1]) {
+    if(root.head.value === '/' && root.childs.length === 2) {
       if(root.childs[1].head.type === 'constant' && root.childs[1].head.value === 1) {
         root['__proto__'] = root.childs[0]['__proto__'];
         root.head = root.childs[0].head;
         root.childs = root.childs[0].childs;
+        
+        modified = true;
+      }
+      
+      else if(root.childs[0].head.type === 'constant' && root.childs[0].head.value === 0) {
+        root['__proto__'] = Leaf.prototype;
+        root.head.type = 'constant';
+        root.head.value = 0;
+        root.childs = undefined;
+        
+        modified = true;
+      }
+      
+      else if(root.childs[1].head.type === 'constant' && root.childs[1].head.value === 0) {
+        throw new Error('Expression Error: division by zero!');
       }
     }
     
     else if(root.head.value === '*') {
+      
       for(i = 0; i < root.childs.length; ++i) {
         if(root.childs[i].head.type === 'constant' && root.childs[i].head.value === 1) {
           root.childs.splice(i, 1);
           --i;
+          
+          modified = true;
         }
       }
     }
@@ -316,6 +334,8 @@ rules.push(function unnecessaryConstantStrip(root) {
         if(root.childs[i].head.type === 'constant' && root.childs[i].head.value === 0) {
           root.childs.splice(i, 1);
           --i;
+          
+          modified = true;
         }
       }
     }
@@ -325,10 +345,13 @@ rules.push(function unnecessaryConstantStrip(root) {
         root['__proto__'] = root.childs[0]['__proto__'];
         root.head = root.childs[0].head;
         root.childs = root.childs[0].childs;
+        
+        modified = true;
       }
-    }
-    
+    }    
   }
+  
+  return modified;
 });
 
 
@@ -365,6 +388,10 @@ rules.push(function constantsMultiplication(root) {
 rules.push(function fractionConstantsReduction(root) {
   var modified = applyToChilds(root, fractionConstantsReduction);
   var gcd = function gcd(n1, n2) {
+    if(n1 === 0 || n2 === 0) {
+      return 1;
+    }
+    
     if(n1 === n2) {
       return n1;
     }
@@ -392,7 +419,7 @@ rules.push(function fractionConstantsReduction(root) {
     lk = lhs.reduce(function(prev, e) { return prev * e.value; }, 1);
     rk = rhs.reduce(function(prev, e) { return prev * e.value; }, 1);
     
-    k = gcd(lk, rk);
+    k = gcd(Math.abs(lk), Math.abs(rk));
     
     if(k !== 1) {
       var obj = {
@@ -467,6 +494,86 @@ rules.push(function groupLiterals(root) {
         current[current[0].head.type === 'constant' ? 0 : 1].head.value = literals[pair.literal];
       }
     }
+  }
+  
+  return modified;
+});
+
+
+// 2/3 + 1/3 -> 3/3
+// 1 / 7 + 1 / 3 -> 10 / 21
+rules.push(function commonDenominator(root) {
+  var modified = applyToChilds(root, commonDenominator);
+  
+  if(root.head.type === 'operator' && ['+', '-'].indexOf(root.head.value) !== -1) {
+    var fractions = [], result = [], denominator = [],
+        i, current, constants;
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      if(root.childs[i].head.type === 'operator' && root.childs[i].head.value === '/') {
+        fractions.push(root.childs[i]);
+        root.childs.splice(i, 1);
+        --i;
+      }
+    }
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      if(root.childs[i].head.type === 'constant') {
+        result.push(root.childs[i]);
+        root.childs.splice(i, 1);
+        --i;
+      }
+    }
+    
+    if(fractions.length + result.length < 2) {
+      root.childs = root.childs.concat(fractions);
+      root.childs = root.childs.concat(result);
+      return modified;
+    }
+    
+    constants = result.length;
+    for(i = 0; i < fractions.length; ++i) {
+      result.push(fractions[i].childs[0]);
+      denominator.push(fractions[i].childs[1]);
+    }
+    
+    denominator = new Node({
+      type: 'operator',
+      value: '*'
+    }, denominator);
+    
+    for(i = 0; i < constants; ++i) {
+      current = [ denominator.clone(), result[i] ];
+      
+      result[i] = new Node({
+        type: 'operator',
+        value: '*'
+      }, current);
+    }
+    for(i = constants; i < result.length; ++i) {
+      current = [ denominator.clone(), result[i] ];
+      
+      if(!current[0].divide(current, fractions[i - constants].childs[1].head)) {
+        throw new Error('Internal Error: commonDenominator(0)');
+      }
+      
+      result[i] = new Node({
+        type: 'operator',
+        value: '*'
+      }, current);
+    }
+    
+    result = new Node({
+      type: root.head.type,
+      value: root.head.value
+    }, result);
+    
+    root.childs.push(new Node({
+      type: 'operator',
+      value: '/'
+    }, [result, denominator]).reduce());
+    
+    return true;
   }
   
   return modified;
