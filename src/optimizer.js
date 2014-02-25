@@ -151,34 +151,6 @@ rules.push(function multiplicationByZero(root) {
 });
 
 
-// (2 + 3) * 5  -> 25
-// 2 * 1        -> 2
-rules.push(function constantsMultiplication(root) {
-  var modified = applyToChilds(root, constantsMultiplication);
-  
-  if(root.head.type === 'operator' && root.head.value === '*') {
-    var i, result = 1, ops = 0;
-    
-    for(i = 0; i < root.childs.length; ++i) {
-      if(root.childs[i].head.type === 'constant') {
-        result *= root.childs[i].head.value;
-        root.childs.splice(i, 1);
-        ++ops;
-        --i;
-      }
-    }
-    
-    modified = modified || (ops > 1);
-    
-    if(ops > 0 || root.childs.length === 0) {
-      root.childs.push(new Leaf({ type: 'constant', value: result }));
-    }
-  }
-  
-  return modified;
-});
-
-
 // b * b * b * a -> b^3 * a
 rules.push(function groupingByMultiplication(root) {
   var modified = applyToChilds(root, groupingByMultiplication);
@@ -360,10 +332,55 @@ rules.push(function unnecessaryConstantStrip(root) {
 });
 
 
+// (2 + 3) * 5  -> 25
+// 2 * 1        -> 2
+rules.push(function constantsMultiplication(root) {
+  var modified = applyToChilds(root, constantsMultiplication);
+  
+  if(root.head.type === 'operator' && root.head.value === '*') {
+    var i, result = 1, ops = 0;
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      if(root.childs[i].head.type === 'constant') {
+        result *= root.childs[i].head.value;
+        root.childs.splice(i, 1);
+        ++ops;
+        --i;
+      }
+    }
+    
+    modified = modified || (ops > 1);
+    
+    if(ops > 0 || root.childs.length === 0) {
+      root.childs.push(new Leaf({ type: 'constant', value: result }));
+    }
+  }
+  
+  return modified;
+});
+
+
 // 2 / 4 -> 1 / 2
 // 14 / 21 -> 2 / 3
 rules.push(function fractionConstantsReduction(root) {
-  // TODO
+  var modified = applyToChilds(root, fractionConstantsReduction);
+  
+  if(root.head.type === 'operator' && root.head.value === '/' && root.childs.length === 2) {
+    var lhs = root.childs[0].getSeparableSymbols(true),
+        rhs = root.childs[1].getSeparableSymbols(true),
+        lk, rk;
+    
+    lhs = lhs.filter(function(e) {
+      return e.type === 'constant';
+    });
+    rhs = rhs.filter(function(e) {
+      return e.type === 'constant';
+    });
+    
+    lk = lhs.reduce(function(prev, e) { return prev * e.value; }, 1);
+    rk = rhs.reduce(function(prev, e) { return prev * e.value; }, 1);
+    
+  }
   
   return false;
 });

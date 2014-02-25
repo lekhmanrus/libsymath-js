@@ -26,52 +26,93 @@ Node.prototype.reduce = function() {
 
 Leaf.prototype.reduce = function() { };
 
-Node.prototype.getSeparableSymbols = function() {
-  if(this.head.type === 'operator') {
-    var result = [], tmp = [],
-        i;
-    
-    if(['-', '+'].indexOf(this.head.value) !== -1) {
-      for(i = 0; i < this.childs.length; ++i) {
-        tmp.push(this.childs[i].getSeparableSymbols());
-      }
-      
-      return tmp[0].filter(function(e) {
-        for(i = 1; i < tmp.length; ++i) {
-          var found = false, j;
-          
-          for(j = 0; !found && j < tmp[i].length; ++j) {
-            if(tmp[i][j].type === e.type && tmp[i][j].value === e.value) {
-              found = true;
-            }
-          }
-          
-          if(!found) {
-            return false;
-          }
-        }
-        
-        return true;
-      });
+Node.prototype.getSeparableSymbols = function(isExtended) {
+  if(this.head.type !== 'operator') {
+    return [];
+  }
+  
+  var comparer = function(obj, e) {
+    return obj.type === e.type && obj.value === e.value;
+  };
+  var comparerExt = function(e) {
+    return e.type === 'constant';
+  };
+  var gcd = function gcd(n1, n2) {
+    if(n1 !== n2) {
+      return n1;
     }
     
+    if(n1 > n2) {
+      return gcd(n1 - n2, n2);
+    }
     else {
-      for(i = 0; i < this.childs.length; ++i) {
-        tmp = tmp.concat(this.childs[i].getSeparableSymbols());
+      return gcd(n1, n2 - n1);
+    }
+  };
+  
+  var getAllSymbols = function(node) {
+    var tmp = [], result = [], i;
+    
+    for(i = 0; i < node.childs.length; ++i) {
+      tmp = tmp.concat(node.childs[i].getSeparableSymbols(isExtended));
+    }
+    
+    for (i = 0; i < tmp.length; i++) {
+      if(!result.some(comparer.bind(undefined, tmp[i]))) {
+        result.push(tmp[i]);
       }
-      
-      for (i = 0; i < tmp.length; i++) {
-        if (result.indexOf(result[i]) === -1) {
-          result.push(tmp[i]);
+    }
+    
+    return result;
+  };
+  var getSharedSymbols = function(node) {
+    var tmp = [], i;
+    
+    for(i = 0; i < node.childs.length; ++i) {
+      tmp.push(node.childs[i].getSeparableSymbols());
+    }
+    
+    return tmp[0].filter(function(e) {
+      for(i = 1; i < tmp.length; ++i) {
+        if(!tmp[i].some(comparer.bind(undefined, e))) {
+          return false;
         }
       }
       
-      return result;
+      return true;
+    });
+  };
+  var getSharedExtendedSymbols = function(node) {
+    var tmp = [], i;
+    
+    for(i = 0; i < node.childs.length; ++i) {
+      tmp.push(node.childs[i].getSeparableSymbols(true).filter(comparerExt));
+      if(tmp[i].length !== 1) {
+        return [];
+      }
+      
+      tmp[i] = tmp[i][0];
     }
     
+    var result = tmp[0];
+    for(i = 1; i < tmp.length; ++i) {
+      result.value = gcd(result.value, tmp[i].value);
+    }
+    
+    //console.log(result);
+    return [ result ];
+  };
+  
+  if(['-', '+'].indexOf(this.head.value) !== -1) {
+    if(!isExtended) {
+      return getSharedSymbols(this);
+    }
+    else {
+      return getSharedExtendedSymbols(this);
+    }
   }
   else {
-    return [];
+    return getAllSymbols(this, isExtended);
   }
 };
 
