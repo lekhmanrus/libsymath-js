@@ -131,22 +131,50 @@ Lexer.prototype.getTokenType = function(token) {
 };
 
 Lexer.prototype.tokens = function() {
-  var result = [],
-      token = this.getNextToken(),
-      currentType,
-      previousType;
+  var result = [], token = this.getNextToken(),
+      currentType, previousType, i, j;
   
   while(token) {
     currentType = this.getTokenType(token);
     
     if(currentType.type === 'bracket' && previousType && previousType.type === 'literal' && ['(', '['].indexOf(currentType.value) !== -1) {
       result[result.length - 1].type = 'func';
-    } else {
+    }
+    else {
       result.push(currentType);
     }
 
     previousType = currentType;
     token = this.getNextToken();
+  }
+  
+  
+  if(result.length > 1) {
+    // unary `-` workaround
+    
+    if(result[0].type === 'operator' && result[0].value === '-' && ['constant', 'complex'].indexOf(result[1].type !== -1)) {
+      result[1].value *= -1;
+      result.shift();
+    } 
+    
+    else if(result[0].type === 'operator' && result[0].value === '-') {
+      result[1].unaryNegative = true;
+      result.shift();
+    }
+    
+    for(i = 1; i < result.length; ++i) {
+      if(result[i - 1].value === '(' && result[i].value === '-') {
+        if(['constant', 'complex'].indexOf(result[i + 1].type) !== -1) {
+          result.splice(i, 1);
+          result[i].value *= -1;
+        }
+        
+        else {
+          result.splice(i, 1);
+          result[i].unaryNegative = true;
+        }
+      }
+    }
   }
   
   return result;
