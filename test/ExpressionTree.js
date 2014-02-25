@@ -181,7 +181,7 @@ module.exports.binaryTree = {
     }, SyntaxError);
     
     test.throws(function() {
-      var tree = new ExpressionTree('33 * c/ (25 - 25)');
+      var tree = new ExpressionTree('33 * c/ (25 - 25)').optimize();
     }, Error);
     
     test.done();
