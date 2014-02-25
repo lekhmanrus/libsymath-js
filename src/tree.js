@@ -38,7 +38,7 @@ Node.prototype.getSeparableSymbols = function(isExtended) {
     return e.type === 'constant';
   };
   var gcd = function gcd(n1, n2) {
-    if(n1 !== n2) {
+    if(n1 === n2) {
       return n1;
     }
     
@@ -94,7 +94,7 @@ Node.prototype.getSeparableSymbols = function(isExtended) {
       tmp[i] = tmp[i][0];
     }
     
-    var result = tmp[0];
+    var result = JSON.parse(JSON.stringify(tmp[0]));
     for(i = 1; i < tmp.length; ++i) {
       result.value = gcd(result.value, tmp[i].value);
     }

@@ -364,11 +364,23 @@ rules.push(function constantsMultiplication(root) {
 // 14 / 21 -> 2 / 3
 rules.push(function fractionConstantsReduction(root) {
   var modified = applyToChilds(root, fractionConstantsReduction);
+  var gcd = function gcd(n1, n2) {
+    if(n1 === n2) {
+      return n1;
+    }
+    
+    if(n1 > n2) {
+      return gcd(n1 - n2, n2);
+    }
+    else {
+      return gcd(n1, n2 - n1);
+    }
+  };
   
   if(root.head.type === 'operator' && root.head.value === '/' && root.childs.length === 2) {
     var lhs = root.childs[0].getSeparableSymbols(true),
         rhs = root.childs[1].getSeparableSymbols(true),
-        lk, rk;
+        lk, rk, k;
     
     lhs = lhs.filter(function(e) {
       return e.type === 'constant';
@@ -380,6 +392,23 @@ rules.push(function fractionConstantsReduction(root) {
     lk = lhs.reduce(function(prev, e) { return prev * e.value; }, 1);
     rk = rhs.reduce(function(prev, e) { return prev * e.value; }, 1);
     
+    k = gcd(lk, rk);
+    
+    if(k !== 1) {
+      var obj = {
+        type: 'constant',
+        value: k
+      };
+      
+      if(!root.childs[0].divide(root, obj)) {
+        throw new Error('Internal Error: fractionConstantsReduction(0)');
+      }
+      if(!root.childs[1].divide(root, obj)) {
+        throw new Error('Internal Error: fractionConstantsReduction(1)');
+      }
+      
+      return true;
+    }
   }
   
   return false;
