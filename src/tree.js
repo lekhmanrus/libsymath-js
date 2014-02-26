@@ -301,5 +301,36 @@ Leaf.prototype.getConstantValue = function() {
   return this.head.type === 'constant' ? this.head.value : 0;
 };
 
+Node.prototype.serializeTeX = function() {
+  var result = '';
+  
+  if(this.head.type === 'operator' && ['-', '+', '*', '^'].indexOf(this.head.value) !== -1) {
+    return this.childs.map(function(e) {
+      return e.serializeTeX();
+    }).join(' ' + this.head.value + ' ');
+  }
+  
+  if(this.head.type === 'operator' && this.head.value === '/') {
+    return '\\frac{ ' + this.childs[0].serializeTeX() + ' }{ ' + this.childs[1].serializeTeX() + ' }';
+  }
+  
+  if(this.head.type === 'func') {
+    var prefix = '';
+    if(['sin', 'cos', 'sqrt'].indexOf(this.head.value) !== -1) {
+      prefix = '\\';
+    }
+    
+    return prefix + this.head.value + '( ' + this.childs[0].serializeTeX() + ' )';
+  }
+};
+
+Leaf.prototype.serializeTeX = function() {
+  if(this.head.type === 'complex') {
+    return this.head.value + 'i ';
+  }
+  
+  return this.head.value;
+};
+
 module.exports.Node = Node;
 module.exports.Leaf = Leaf;
