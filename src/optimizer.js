@@ -1,4 +1,4 @@
-/*jslint white: true, node: true, plusplus: true, vars: true, nomen: true, sub: true */
+/*jslint white: true, node: true, plusplus: true, vars: true, nomen: true, sub: true, bitwise: true */
 /*global module */
 'use strict';
 
@@ -348,7 +348,7 @@ rules.push(function unnecessaryConstantStrip(root) {
         
         modified = true;
       }
-    }    
+    }
   }
   
   return modified;
@@ -574,6 +574,65 @@ rules.push(function commonDenominator(root) {
     }, [result, denominator]).reduce());
     
     return true;
+  }
+  
+  return modified;
+});
+
+
+// 2 ^ 2 -> 4
+// 4 ^ (1/2) -> 2
+// 2 ^ (-1) -> 1/2
+rules.push(function constantsPower(root) {
+  var modified = applyToChilds(root, constantsPower);
+  
+  if(root.head.type === 'operator' && root.head.value === '^') {
+    if(root.childs[0].head.type === 'constant' && root.childs[1].head.type === 'constant') {
+      if(root.childs[1].head.value < 0 && root.childs[1].head.value === (root.childs[1].head.value|0)) {
+        var oldRoot = root.clone();
+        oldRoot.childs[1].head.value *= -1;
+        
+        root.head.value = '/';
+        root.childs = [
+          new Leaf({
+            type: 'constant',
+            value: 1
+          }),
+          
+          oldRoot
+        ];
+        
+        return true;
+      }
+    }
+    
+    if(root.childs[0].head.type === 'constant' && root.childs[1].isConstant()) {
+      var constValue = root.childs[1].getConstantValue();
+      
+      root.head.type = 'constant';
+      root.head.value = Math.round(100 * Math.pow(root.childs[0].head.value, constValue)) / 100;
+      root.childs = undefined;
+      root['__proto__'] = Leaf.prototype;
+      
+      modified = true;
+    }
+  }
+  
+  return modified;
+});
+
+
+// sqrt(4) -> 2
+rules.push(function constantsSquareRoot(root) {
+  var modified = applyToChilds(root, constantsSquareRoot);
+  
+  if(root.head.type === 'func' && root.head.value === 'sqrt' && root.childs[0].isConstant()) {
+    var constValue = root.childs[0].getConstantValue();
+      
+    root.head.type = 'constant';
+    root.head.value = Math.round(100 * Math.sqrt(constValue)) / 100;
+    root.childs = undefined;
+    root['__proto__'] = Leaf.prototype;
   }
   
   return modified;

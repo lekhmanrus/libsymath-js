@@ -792,7 +792,7 @@ module.exports.constants = {
   },
   
   test2: function(test) {
-    var expression = new Expression('2^-1').optimize(),
+    var expression = new Expression('2^(-1)').optimize(),
         root = expression.getRoot();
     
     test.strictEqual(root.childs.length, 2);
@@ -811,7 +811,7 @@ module.exports.constants = {
   },
   
   test3: function(test) {
-    var expression = new Expression('2^-2').optimize(),
+    var expression = new Expression('2^(-2)').optimize(),
         root = expression.getRoot();
     
     test.strictEqual(root.childs.length, 2);
@@ -869,32 +869,6 @@ module.exports.constants = {
     test.strictEqual(root.childs, undefined);
     test.strictEqual(root.head.type, 'constant');
     test.strictEqual(root.head.value, 2.24);
-    
-    test.done();
-  }
-  
-};
-
-module.exports.func = {
-  
-  test1: function(test) {
-    var expression = new Expression('-f(x) / f(x)').optimize(),
-        root = expression.getRoot();
-    
-    test.strictEqual(root.childs, undefined);
-    test.strictEqual(root.head.type, 'constant');
-    test.strictEqual(root.head.value, -1);
-    
-    test.done();
-  },
-  
-  test2: function(test) {
-    var expression = new Expression('f(x) / -f(x)').optimize(),
-        root = expression.getRoot();
-    
-    test.strictEqual(root.childs, undefined);
-    test.strictEqual(root.head.type, 'operator');
-    test.strictEqual(root.head.value, -1);
     
     test.done();
   }
