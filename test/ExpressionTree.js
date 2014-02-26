@@ -353,8 +353,6 @@ module.exports.binaryTree = {
     
     tree = new ExpressionTree('-5 * (-cos(a))');
     root = tree.getRoot();
-    
-    console.log(JSON.stringify(root, '', 2));
 
     test.notStrictEqual(root, undefined);
     

@@ -288,6 +288,42 @@ module.exports.addition = {
     test.strictEqual(root.childs[1].head.value, 2);
     
     test.done();
+  },
+  
+  test16: function(test) {
+    var expression = new Expression('-2 + 3').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 1);
+    test.done();
+  },
+  
+  test17: function(test) {
+    var expression = new Expression('-2 - 3').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, -5);
+    test.done();
+  },
+  
+  test18: function(test) {
+    var expression = new Expression('3 - (-5)').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 8);
+    test.done();
   }
   
 };
@@ -395,6 +431,18 @@ module.exports.multiplication = {
     test.strictEqual(root.childs, undefined);
     test.strictEqual(root.head.type, 'constant');
     test.strictEqual(root.head.value, 11);
+    test.done();
+  },
+  
+  test8: function(test) {
+    var expression = new Expression('-2 * 3').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, -6);
     test.done();
   }
   
