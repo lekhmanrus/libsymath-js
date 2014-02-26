@@ -145,7 +145,7 @@ Node.prototype.divide = function(root, symbol) {
       return divided;
     }
     
-    else if(this.head.value === '^') {
+    else if(this.head.value === '^' && this.childs[0].head.type === symbol.type && this.childs[0].head.value === symbol.value) {
       this.childs[1].head.value -= 1;
       return true;
     }
@@ -229,6 +229,76 @@ Leaf.prototype.clone = function() {
     value: this.head.value,
     loc: this.head.loc
   });
+};
+
+Node.prototype.isConstant = function() {
+  var result = true,
+      i;
+  
+  for(i = 0; i < this.childs.length; ++i) {
+    result = result && this.childs[i].isConstant();
+  }
+  
+  return result;
+};
+
+Leaf.prototype.isConstant = function() {
+  return this.head.type === 'constant'; 
+};
+
+Node.prototype.getConstantValue = function() {
+  var result;
+  
+  if(this.head.type === 'operator') {
+    var i;
+    
+    if(this.head.value === '+') {
+      result = 0;
+      for(i = 0; i < this.childs.length; ++i) {
+        result += this.childs[i].getConstantValue();
+      }
+      
+      return result;
+    }
+    
+    if(this.head.value === '-') {
+      result = this.childs[0].getConstantValue();
+      for(i = 1; i < this.childs.length; ++i) {
+        result -= this.childs[i].getConstantValue();
+      }
+      
+      return result;
+    }
+    
+    if(this.head.value === '*') {
+      result = 1;
+      for(i = 0; i < this.childs.length; ++i) {
+        result *= this.childs[i].getConstantValue();
+      }
+      
+      return result;
+    }
+    
+    if(this.head.value === '/') {      
+      return this.childs[0].getConstantValue() / this.childs[1].getConstantValue();
+    }
+    
+    if(this.head.value === '^') {      
+      return Math.pow(this.childs[0].getConstantValue(), this.childs[1].getConstantValue());
+    }
+  }
+  
+  else {
+    throw new Error('TODO `getConstantValue` for non-operators');
+  }
+  
+  
+  
+  return result;
+};
+
+Leaf.prototype.getConstantValue = function() {
+  return this.head.type === 'constant' ? this.head.value : 0;
 };
 
 module.exports.Node = Node;

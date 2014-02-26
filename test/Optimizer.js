@@ -288,6 +288,42 @@ module.exports.addition = {
     test.strictEqual(root.childs[1].head.value, 2);
     
     test.done();
+  },
+  
+  test16: function(test) {
+    var expression = new Expression('-2 + 3').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 1);
+    test.done();
+  },
+  
+  test17: function(test) {
+    var expression = new Expression('-2 - 3').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, -5);
+    test.done();
+  },
+  
+  test18: function(test) {
+    var expression = new Expression('3 - (-5)').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 8);
+    test.done();
   }
   
 };
@@ -395,6 +431,18 @@ module.exports.multiplication = {
     test.strictEqual(root.childs, undefined);
     test.strictEqual(root.head.type, 'constant');
     test.strictEqual(root.head.value, 11);
+    test.done();
+  },
+  
+  test8: function(test) {
+    var expression = new Expression('-2 * 3').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, -6);
     test.done();
   }
   
@@ -724,6 +772,103 @@ module.exports.division = {
     test.strictEqual(root.childs[1].childs, undefined);
     test.strictEqual(root.childs[1].head.type, 'constant');
     test.strictEqual(root.childs[1].head.value, 2);    
+    
+    test.done();
+  }
+  
+};
+
+module.exports.constants = {
+  
+  test1: function(test) {
+    var expression = new Expression('2^2').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 4);
+    
+    test.done();
+  },
+  
+  test2: function(test) {
+    var expression = new Expression('2^(-1)').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 1);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 2);
+    
+    test.done();
+  },
+  
+  test3: function(test) {
+    var expression = new Expression('2^(-2)').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 1);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 4);
+    
+    test.done();
+  },
+  
+  test4: function(test) {
+    var expression = new Expression('sqrt(4)').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 2);
+    
+    test.done();
+  },
+  
+  test5: function(test) {
+    var expression = new Expression('4^(1/2)').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 2);
+    
+    test.done();
+  },
+  
+  test6: function(test) {
+    var expression = new Expression('8^(1/3)').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 2);
+    
+    test.done();
+  },
+  
+  test7: function(test) {
+    var expression = new Expression('sqrt(5)').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 2.24);
     
     test.done();
   }

@@ -242,6 +242,143 @@ module.exports.binaryTree = {
     test.done();
   },
   
+  unary_minus: function(test) {
+    var tree = new ExpressionTree('2 - 5'),
+        root = tree.getRoot();
+
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '-');
+
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 2);
+
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 5);
+
+    tree = new ExpressionTree('-5 * cos(a)');
+    root = tree.getRoot();
+
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '*');
+
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, -5);
+
+    root = root.childs[1];
+   
+    test.strictEqual(root.childs.length, 1);
+    test.strictEqual(root.head.type, 'func');
+    test.strictEqual(root.head.value, 'cos');
+
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'a');
+
+    tree = new ExpressionTree('- 5 - 4 + 3');
+    root = tree.getRoot();
+
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '+');
+
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 3);
+
+    root = root.childs[0];
+   
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '-');
+
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, -5);
+
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 4);
+
+    tree = new ExpressionTree('- 0');
+    root = tree.getRoot();
+
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 0);
+
+    tree = new ExpressionTree('-0');
+    root = tree.getRoot();
+
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 0);
+    
+    tree = new ExpressionTree('cos(a) * (-5)');
+    root = tree.getRoot();
+
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '*');
+
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, -5);
+
+    root = root.childs[0];
+   
+    test.strictEqual(root.childs.length, 1);
+    test.strictEqual(root.head.type, 'func');
+    test.strictEqual(root.head.value, 'cos');
+
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'a');
+    
+    tree = new ExpressionTree('-5 * (-cos(a))');
+    root = tree.getRoot();
+
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root instanceof Node, true);
+    test.strictEqual(root instanceof Leaf, false);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '*');
+
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, -5);
+
+    root = root.childs[1];
+    
+    test.strictEqual(root.childs.length, 1);
+    test.strictEqual(root.head.type, 'func');
+    test.strictEqual(root.head.value, 'cos');
+
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'a');
+    
+    test.done();
+  },
+  
   func: function(test) {
     var tree = new ExpressionTree('sin(2 + b * c) * 5i'),
         root = tree.getRoot();
