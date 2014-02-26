@@ -314,9 +314,13 @@ Node.prototype.serializeTeX = function() {
     return '\\frac{ ' + this.childs[0].serializeTeX() + ' }{ ' + this.childs[1].serializeTeX() + ' }';
   }
   
+  if(this.head.type === 'func' && this.head.value === 'sqrt') {    
+    return '\\sqrt{ ' + this.childs[0].serializeTeX() + ' }';
+  }
+  
   if(this.head.type === 'func') {
     var prefix = '';
-    if(['sin', 'cos', 'sqrt'].indexOf(this.head.value) !== -1) {
+    if(['sin', 'cos'].indexOf(this.head.value) !== -1) {
       prefix = '\\';
     }
     
