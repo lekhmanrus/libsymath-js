@@ -2,8 +2,9 @@
 /*global module */
 'use strict';
 
-var Node = require('./tree').Node,
-    Leaf = require('./tree').Leaf;
+var Node  = require('./tree').Node,
+    Leaf  = require('./tree').Leaf,
+    Utils = require('./utils');
 
 function Optimizer(root) {
   if(!root) {
@@ -387,22 +388,6 @@ rules.push(function constantsMultiplication(root) {
 // 14 / 21 -> 2 / 3
 rules.push(function fractionConstantsReduction(root) {
   var modified = applyToChilds(root, fractionConstantsReduction);
-  var gcd = function gcd(n1, n2) {
-    if(n1 === 0 || n2 === 0) {
-      return 1;
-    }
-    
-    if(n1 === n2) {
-      return n1;
-    }
-    
-    if(n1 > n2) {
-      return gcd(n1 - n2, n2);
-    }
-    else {
-      return gcd(n1, n2 - n1);
-    }
-  };
   
   if(root.head.type === 'operator' && root.head.value === '/' && root.childs.length === 2) {
     var lhs = root.childs[0].getSeparableSymbols(true),
@@ -419,7 +404,7 @@ rules.push(function fractionConstantsReduction(root) {
     lk = lhs.reduce(function(prev, e) { return prev * e.value; }, 1);
     rk = rhs.reduce(function(prev, e) { return prev * e.value; }, 1);
     
-    k = gcd(Math.abs(lk), Math.abs(rk));
+    k = Utils.gcd(Math.abs(lk), Math.abs(rk));
     
     if(k !== 1) {
       var obj = {

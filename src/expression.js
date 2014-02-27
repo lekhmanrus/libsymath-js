@@ -5,7 +5,8 @@
 var Lexer     = require('./lexer'),
     Optimizer = require('./optimizer'),
     Node      = require('./tree').Node,
-    Leaf      = require('./tree').Leaf;
+    Leaf      = require('./tree').Leaf,
+    Utils     = require('./utils');
 
 function ExpressionTree(expressionString) {
   if(!expressionString) {
@@ -18,23 +19,7 @@ function ExpressionTree(expressionString) {
   this.buildBinaryExpressionTree_(tokens);
 }
 
-ExpressionTree.prototype.reversePolishNotation_ = function(tokens) {
-  var getOperationPriority = function(value) {
-    if(value === '+' || value === '-') {
-      return 1;
-    }
-    
-    if(value === '*' || value === '/') {
-      return 2;
-    }
-    
-    if(value === '^') {
-      return 3;
-    }
-    
-    return -1;
-  };
-  
+ExpressionTree.prototype.reversePolishNotation_ = function(tokens) {  
   var result  = [],
       stack   = [],
       i;
@@ -45,7 +30,7 @@ ExpressionTree.prototype.reversePolishNotation_ = function(tokens) {
     }
     
     else if(tokens[i].type === 'operator') {
-      while(stack.length > 0 && getOperationPriority(tokens[i].value) <= getOperationPriority(stack[stack.length - 1].value)) {
+      while(stack.length > 0 && Utils.getOperationPriority(tokens[i].value) <= Utils.getOperationPriority(stack[stack.length - 1].value)) {
         result.push(stack.pop());
       }
       

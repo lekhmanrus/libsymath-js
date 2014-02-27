@@ -1,6 +1,7 @@
 /*jslint white: true, node: true, plusplus: true, vars: true */
 /*global module */
 'use strict';
+var Utils = require('./utils');
 
 function Node(head, childs) {
   this.head = head;
@@ -38,22 +39,6 @@ Node.prototype.getSeparableSymbols = function(isExtended) {
   };
   var comparerExt = function(e) {
     return e.type === 'constant';
-  };
-  var gcd = function gcd(n1, n2) {
-    if(n1 === 0 || n2 === 0) {
-      return 1;
-    }
-    
-    if(n1 === n2) {
-      return n1;
-    }
-    
-    if(n1 > n2) {
-      return gcd(n1 - n2, n2);
-    }
-    else {
-      return gcd(n1, n2 - n1);
-    }
   };
   
   var getAllSymbols = function(node) {
@@ -106,7 +91,7 @@ Node.prototype.getSeparableSymbols = function(isExtended) {
     
     var result = JSON.parse(JSON.stringify(tmp[0]));
     for(i = 1; i < tmp.length; ++i) {
-      result.value = gcd(Math.abs(result.value), Math.abs(tmp[i].value));
+      result.value = Utils.gcd(Math.abs(result.value), Math.abs(tmp[i].value));
     }
     
     return [ result ];
@@ -301,13 +286,20 @@ Leaf.prototype.getConstantValue = function() {
   return this.head.type === 'constant' ? this.head.value : 0;
 };
 
-Node.prototype.serializeTeX = function() {
-  var result = '';
+Node.prototype.serializeTeX = function(priority) {
+  priority === priority || -1;
+  
+  var result = '',
+      currentPriority = Utils.getOperationPriority(this.head.value);
   
   if(this.head.type === 'operator' && ['-', '+', '*', '^'].indexOf(this.head.value) !== -1) {
-    return this.childs.map(function(e) {
-      return e.serializeTeX();
+    result = this.childs.map(function(e) {
+      return e.serializeTeX(currentPriority);
     }).join(' ' + this.head.value + ' ');
+    
+    if(currentPriority < priority) {
+      return '(' + result + ')';
+    }
   }
   
   if(this.head.type === 'operator' && this.head.value === '/') {
