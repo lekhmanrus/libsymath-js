@@ -771,7 +771,69 @@ module.exports.division = {
     
     test.strictEqual(root.childs[1].childs, undefined);
     test.strictEqual(root.childs[1].head.type, 'constant');
-    test.strictEqual(root.childs[1].head.value, 2);    
+    test.strictEqual(root.childs[1].head.value, 2);
+    
+    test.done();
+  },
+  
+  test17: function(test) {
+    var expression = new Expression('(2*x + 3*x + 5*y) / (5*z)').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    root = expression.getRoot().childs[0];
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '+');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'x');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'literal');
+    test.strictEqual(root.childs[1].head.value, 'y');
+    
+    root = expression.getRoot().childs[1];
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'literal');
+    test.strictEqual(root.head.value, 'z');
+    
+    test.done();
+  },
+  
+  test18: function(test) {
+    var expression = new Expression('(8*x - 3*x + 5*y) / (5*z)').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    root = expression.getRoot().childs[0];
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '+');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'x');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'literal');
+    test.strictEqual(root.childs[1].head.value, 'y');
+    
+    root = expression.getRoot().childs[1];
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'literal');
+    test.strictEqual(root.head.value, 'z');
     
     test.done();
   }

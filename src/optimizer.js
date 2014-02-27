@@ -433,37 +433,20 @@ rules.push(function groupLiterals(root) {
       i, pair, current,
       literals = { };
   
-  if(root.head.type === 'operator' && root.head.value === '+') {
+  if(root.head.type === 'operator' && ['+', '-'].indexOf(root.head.value) !== -1) {
     for(i = 0; i < root.childs.length; ++i) {
       pair = root.childs[i].getSimpleMultPair();
       if(pair) {
         if(literals[pair.literal]) {
-          literals[pair.literal] += pair.constant;
+          if(root.head.value === '+') {
+            literals[pair.literal] += pair.constant;
+          }
+          else {
+            literals[pair.literal] -= pair.constant;
+          }
+          
           root.childs.splice(i, 1);
-          --i;
-        } else {
-          literals[pair.literal] = pair.constant;
-        }
-      }
-    }
-    
-    for(i = 0; i < root.childs.length; ++i) {
-      pair = root.childs[i].getSimpleMultPair();
-      
-      if(pair) {
-        current = root.childs[i].childs;
-        current[current[0].head.type === 'constant' ? 0 : 1].head.value = literals[pair.literal];
-      }
-    }
-  }
-  
-  else if(root.head.type === 'operator' && root.head.value === '-') {
-    for(i = 0; i < root.childs.length; ++i) {
-      pair = root.childs[i].getSimpleMultPair();
-      if(pair) {
-        if(literals[pair.literal]) {
-          literals[pair.literal] -= pair.constant;
-          root.childs.splice(i, 1);
+          modified = true;
           --i;
         } else {
           literals[pair.literal] = pair.constant;
