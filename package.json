@@ -1,6 +1,6 @@
 {
   "name": "libsymath",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "symbol math library",
   "main": "index.js",
   "scripts": {
@@ -26,6 +26,9 @@
   "devDependencies": {
     "nodeunit": "~0.8.4",
     "jscoverage": "~0.3.8",
-    "coveralls": "~2.8.0"
+    "coveralls": "~2.8.0",
+    "grunt": "~0.4.2",
+    "browserify": "~3.31.2",
+    "grunt-browserify": "~1.3.1"
   }
 }
