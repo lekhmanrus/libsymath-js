@@ -1,4 +1,80 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"Focm2+":[function(require,module,exports){
+(function (process,__dirname){
+/*jslint white: true, node: true, plusplus: true, vars: true */
+/*global module, require, __dirname */
+'use strict';
+
+if(process.env.YOURPACKAGE_COVERAGE) {
+  module.exports.Lexer = require(__dirname + '/src-cov/lexer.js');
+  module.exports.Expression = require(__dirname + '/src-cov/expression.js');
+}
+else if(typeof window === 'undefined') {
+  module.exports.Lexer = require(__dirname + '/src/lexer.js');
+  module.exports.Expression = require(__dirname + '/src/expression.js');
+}
+else {
+  module.exports.Lexer = require('./src/lexer.js');
+  module.exports.Expression = require('./src/expression.js');
+}
+}).call(this,require("/home/den/libsymath-js/node_modules/grunt-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),"/")
+},{"./src/expression.js":4,"./src/lexer.js":5,"/home/den/libsymath-js/node_modules/grunt-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":3}],"libsymath":[function(require,module,exports){
+module.exports=require('Focm2+');
+},{}],3:[function(require,module,exports){
+// shim for using process in browser
+
+var process = module.exports = {};
+
+process.nextTick = (function () {
+    var canSetImmediate = typeof window !== 'undefined'
+    && window.setImmediate;
+    var canPost = typeof window !== 'undefined'
+    && window.postMessage && window.addEventListener
+    ;
+
+    if (canSetImmediate) {
+        return function (f) { return window.setImmediate(f) };
+    }
+
+    if (canPost) {
+        var queue = [];
+        window.addEventListener('message', function (ev) {
+            var source = ev.source;
+            if ((source === window || source === null) && ev.data === 'process-tick') {
+                ev.stopPropagation();
+                if (queue.length > 0) {
+                    var fn = queue.shift();
+                    fn();
+                }
+            }
+        }, true);
+
+        return function nextTick(fn) {
+            queue.push(fn);
+            window.postMessage('process-tick', '*');
+        };
+    }
+
+    return function nextTick(fn) {
+        setTimeout(fn, 0);
+    };
+})();
+
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+}
+
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+
+},{}],4:[function(require,module,exports){
 /*jslint white: true, node: true, plusplus: true, vars: true, nomen: true */
 /*global module */
 'use strict';
@@ -208,7 +284,7 @@ ExpressionTree.prototype.getRoot = function() {
 };
 
 module.exports = ExpressionTree;
-},{"./lexer":2,"./optimizer":3,"./tree":4,"./utils":5}],2:[function(require,module,exports){
+},{"./lexer":5,"./optimizer":6,"./tree":7,"./utils":8}],5:[function(require,module,exports){
 /*jslint white: true, node: true, plusplus: true, vars: true */
 /*global module */
 'use strict';
@@ -392,7 +468,7 @@ Lexer.prototype.tokens = function() {
 };
 
 module.exports = Lexer;
-},{}],3:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /*jslint white: true, node: true, plusplus: true, vars: true, nomen: true, sub: true, bitwise: true */
 /*global module */
 'use strict';
@@ -1035,7 +1111,7 @@ rules.push(function stripDepth(root) {
   
   return modified;
 });
-},{"./tree":4,"./utils":5}],4:[function(require,module,exports){
+},{"./tree":7,"./utils":8}],7:[function(require,module,exports){
 /*jslint white: true, node: true, plusplus: true, vars: true */
 /*global module */
 'use strict';
@@ -1371,7 +1447,7 @@ Leaf.prototype.serializeTeX = function() {
 
 module.exports.Node = Node;
 module.exports.Leaf = Leaf;
-},{"./utils":5}],5:[function(require,module,exports){
+},{"./utils":8}],8:[function(require,module,exports){
 /*jslint white: true, node: true, plusplus: true, vars: true */
 /*global module */
 'use strict';
@@ -1408,4 +1484,4 @@ module.exports.getOperationPriority = function(value) {
   
   return -1;
 };
-},{}]},{},[1,2,3,4,5])
+},{}]},{},["Focm2+"])

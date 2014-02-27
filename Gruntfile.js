@@ -9,7 +9,10 @@ module.exports = function(grunt) {
   grunt.config.set('browserify', {
     lib: {
       files: {
-        'browser/libsymath.js': ['src/**/*.js']
+        'browser/libsymath.js': ['index.js']
+      },
+      options: {
+        alias: ['./index.js:libsymath']
       }
     }
   })
