@@ -124,7 +124,7 @@ Lexer.prototype.getTokenType = function(token) {
     };
   }
   
-  var error = new SyntaxError('invalid token: "' + token.text + '"');
+  var error = new SyntaxError('Expression error: invalid token: `' + token.text + '`');
   error.loc = token.loc;
   
   throw error;

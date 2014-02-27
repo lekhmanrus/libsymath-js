@@ -94,7 +94,7 @@ ExpressionTree.prototype.checkReversePolishNotation_ = function(output) {
     
     else if(output[i].type === 'operator') {
       if(stack.length < 2) {
-        error = new SyntaxError('expression error near `' + output[i].value + '` at ' + (output[i].loc.start + 1));
+        error = new SyntaxError('Expression Error: near `' + output[i].value + '` at ' + (output[i].loc.start + 1));
         error.loc = output[i].loc;
         
         throw error;
@@ -106,7 +106,7 @@ ExpressionTree.prototype.checkReversePolishNotation_ = function(output) {
     
     else if(output[i].type === 'func') {
       if(stack.length < 1) {
-        error = new SyntaxError('expression error near `' + output[i].value + '` at ' + (output[i].loc.start + 1));
+        error = new SyntaxError('Expression Error: near `' + output[i].value + '` at ' + (output[i].loc.start + 1));
         error.loc = output[i].loc;
         
         throw error;
@@ -119,7 +119,7 @@ ExpressionTree.prototype.checkReversePolishNotation_ = function(output) {
   if(stack.length !== 1) {
     for(i = 0; i < stack.length; ++i) {
       if(stack[i]) {
-        error = new SyntaxError('expression error near `' + stack[i].value + '` at ' + (stack[i].loc.start + 1));
+        error = new SyntaxError('Expression Error: near `' + stack[i].value + '` at ' + (stack[i].loc.start + 1));
         error.loc = stack[i].loc;
         
         throw error;
@@ -155,7 +155,7 @@ ExpressionTree.prototype.checkBrackets_ = function(tokens) {
 
 ExpressionTree.prototype.buildBinaryExpressionTree_ = function(tokens) {
   if(!this.checkBrackets_(tokens)) {
-    throw new SyntaxError('expression error: brackets count mismatch!');
+    throw new SyntaxError('Expression Error: brackets count mismatch!');
   }
   
   var rawExpression = this.reversePolishNotation_(tokens),
