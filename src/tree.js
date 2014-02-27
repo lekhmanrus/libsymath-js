@@ -300,6 +300,9 @@ Node.prototype.serializeTeX = function(priority) {
     if(currentPriority < priority) {
       return '(' + result + ')';
     }
+    else {
+      return result;
+    }
   }
   
   if(this.head.type === 'operator' && this.head.value === '/') {
