@@ -116,7 +116,7 @@ module.exports.getNextToken = {
 module.exports.getTokenType = {
   
   general: function(test) {
-    var string = 'aaaa + бб   11 ((] ++ 2a',
+    var string = 'aaaa + бб   11 x12 ((] ++ 2a',
         instance = new Lexer(string);
     
     var token = instance.getNextToken(),
@@ -139,6 +139,11 @@ module.exports.getTokenType = {
     type  = instance.getTokenType(token);
     test.strictEqual(type.type, 'constant');
     test.strictEqual(type.value, 11);
+    
+    token = instance.getNextToken();
+    type  = instance.getTokenType(token);
+    test.strictEqual(type.type, 'literal');
+    test.strictEqual(type.value, 'x12');
     
     token = instance.getNextToken();
     type  = instance.getTokenType(token);

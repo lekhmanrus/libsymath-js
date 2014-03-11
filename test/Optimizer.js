@@ -486,6 +486,41 @@ module.exports.multiplication = {
     test.strictEqual(root.head.type, 'constant');
     test.strictEqual(root.head.value, -6);
     test.done();
+  },
+  
+  bugfix1: function(test) {
+    var expression = new Expression('30 * b * c * c').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 3);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '*');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'b');
+    
+    test.strictEqual(root.childs[2].childs, undefined);
+    test.strictEqual(root.childs[2].head.type, 'constant');
+    test.strictEqual(root.childs[2].head.value, 30);
+    
+    root = root.childs[1];
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '^');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'c');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 2);
+    
+    test.done();
   }
   
 };

@@ -157,8 +157,6 @@ Leaf.prototype.divide = function(root, symbol) {
   }
   
   if(this.head.type === 'literal' && this.head.value === symbol.value) {
-    /*var i = root.childs.indexOf(this);
-    root.childs.splice(i, 1);*/
     this.head.type = 'constant';
     this.head.value = 1;
     
@@ -290,7 +288,7 @@ Leaf.prototype.getConstantValue = function() {
 };
 
 Node.prototype.serializeTeX = function(priority) {
-  priority === priority || -1;
+  priority = priority || -1;
   
   var result = '',
       currentPriority = Utils.getOperationPriority(this.head.value);

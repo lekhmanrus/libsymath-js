@@ -48,7 +48,7 @@ Lexer.prototype.getNextToken = function() {
   }
   else
   if(S_LETTER.test(this.buffer[this.offset])) {
-    while(this.offset < length && S_LETTER.test(this.buffer[this.offset])) {
+    while(this.offset < length && (S_LETTER.test(this.buffer[this.offset]) || S_DIGIT.test(this.buffer[this.offset]))) {
       ++this.offset;
     }
   }
