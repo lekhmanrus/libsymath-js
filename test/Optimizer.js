@@ -366,6 +366,82 @@ module.exports.addition = {
     test.strictEqual(root.childs[0].head.value, 'a');
     
     test.done();
+  },
+  
+  test21: function(test) {
+    var expression = new Expression('1 - 1/3').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 2);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 3);
+    
+    test.done();
+  },
+  
+  test22: function(test) {
+    var expression = new Expression('1/3 - 1').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, -2);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 3);
+    
+    test.done();
+  },
+  
+  test23: function(test) {
+    var expression = new Expression('1 + 1/3').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 4);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 3);
+    
+    test.done();
+  },
+  
+  test24: function(test) {
+    var expression = new Expression('1/3 + 1').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 4);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 3);
+    
+    test.done();
   }
   
 };

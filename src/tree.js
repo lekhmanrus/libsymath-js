@@ -131,7 +131,7 @@ Node.prototype.divide = function(root, symbol) {
     }
     
     else if(this.head.value === '^' && this.childs[0].head.type === symbol.type && this.childs[0].head.value === symbol.value) {
-      this.childs[1].head.value -= 1;
+      this.childs[1] = new Node({ type: 'operator', value: '-' }, [this.childs[1], new Leaf({ type: 'constant', value: 1 })]);
       return true;
     }
     
@@ -296,22 +296,22 @@ Node.prototype.serializeTeX = function(priority) {
   if(this.head.type === 'operator' && ['-', '+', '*', '^'].indexOf(this.head.value) !== -1) {
     result = this.childs.map(function(e) {
       return e.serializeTeX(currentPriority);
-    }).join(' ' + this.head.value + ' ');
+    }).join('} ' + this.head.value + ' {');
     
     if(currentPriority < priority) {
-      return '(' + result + ')';
+      return '({' + result + '})';
     }
     else {
-      return result;
+      return '{' + result + '}';
     }
   }
   
   if(this.head.type === 'operator' && this.head.value === '/') {
-    return '\\frac{ ' + this.childs[0].serializeTeX() + ' }{ ' + this.childs[1].serializeTeX() + ' }';
+    return '\\frac{' + this.childs[0].serializeTeX() + '}{' + this.childs[1].serializeTeX() + '}';
   }
   
   if(this.head.type === 'func' && this.head.value === 'sqrt') {    
-    return '\\sqrt{ ' + this.childs[0].serializeTeX() + ' }';
+    return '\\sqrt{' + this.childs[0].serializeTeX() + '}';
   }
   
   if(this.head.type === 'func') {
@@ -329,7 +329,7 @@ Leaf.prototype.serializeTeX = function() {
     return this.head.value + 'i ';
   }
   
-  return this.head.value;
+  return this.head.value + '';
 };
 
 module.exports.Node = Node;

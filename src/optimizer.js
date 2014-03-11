@@ -139,6 +139,7 @@ rules.push(function multiplicationByZero(root) {
     }
     
     if(hasNull) {
+      root['__proto__'] = Leaf.prototype;
       root.head.type = 'constant';
       root.head.value = 0;
       root.head.loc = undefined;
@@ -181,6 +182,7 @@ rules.push(function groupingByMultiplication(root) {
         current = root.childs[i];
         
         if(literals[name] > 1) {
+          current['__proto__'] = Node.prototype;
           current.head = { type: 'operator', value: '^' };
           
           current.childs = [
@@ -520,18 +522,36 @@ rules.push(function commonDenominator(root) {
   
   if(root.head.type === 'operator' && ['+', '-'].indexOf(root.head.value) !== -1) {
     var fractions = [], result = [], denominator = [],
-        i, current, constants;
+        i, current, first, found;
     
     for(i = 0; i < root.childs.length; ++i) {
       if(root.childs[i].head.type === 'operator' && root.childs[i].head.value === '/') {
-        fractions.push(root.childs[i]);
-        root.childs.splice(i, 1);
-        --i;
+        found = true;
+        break;
       }
     }
     
+    if(!found) {
+      return false;
+    }
+    
     for(i = 0; i < root.childs.length; ++i) {
+      if(root.childs[i].head.type === 'operator' && root.childs[i].head.value === '/') {
+        if(!first) {
+          first = 'fraction';
+        }
+        
+        fractions.push(root.childs[i]);
+        root.childs.splice(i, 1);
+        --i;
+        continue;
+      }
+      
       if(root.childs[i].head.type === 'constant') {
+        if(!first) {
+          first = 'constant';
+        }
+        
         result.push(root.childs[i]);
         root.childs.splice(i, 1);
         --i;
@@ -544,10 +564,15 @@ rules.push(function commonDenominator(root) {
       return modified;
     }
     
-    constants = result.length;
-    for(i = 0; i < fractions.length; ++i) {
-      result.push(fractions[i].childs[0]);
-      denominator.push(fractions[i].childs[1]);
+    if(first === 'constant') {
+      for(i = 0; i < fractions.length; ++i) {
+        denominator.push(fractions[i].childs[1]);
+      }
+    }
+    else {
+      denominator = fractions.map(function(e) {
+        return e.childs[1];
+      }).concat(denominator);
     }
     
     denominator = new Node({
@@ -555,25 +580,42 @@ rules.push(function commonDenominator(root) {
       value: '*'
     }, denominator);
     
-    for(i = 0; i < constants; ++i) {
+    for(i = 0; i < result.length; ++i) {
       current = [ denominator.clone(), result[i] ];
-      
+
       result[i] = new Node({
         type: 'operator',
         value: '*'
       }, current);
     }
-    for(i = constants; i < result.length; ++i) {
-      current = [ denominator.clone(), result[i] ];
-      
-      if(!current[0].divide(current, fractions[i - constants].childs[1].head)) {
-        throw new Error('Internal Error: commonDenominator(0)');
+    
+    if(first === 'constant') {      
+      for(i = 0; i < fractions.length; ++i) {
+        current = [ denominator.clone(), fractions[i].childs[0] ];
+        
+        if(!current[0].divide(current, fractions[i].childs[1].head)) {
+          throw new Error('Internal Error: commonDenominator(0)');
+        }
+        
+        result.push(new Node({
+            type: 'operator',
+            value: '*'
+          }, current));
       }
-      
-      result[i] = new Node({
-        type: 'operator',
-        value: '*'
-      }, current);
+    }
+    else {
+      result = fractions.map(function(e) {
+        current = [ denominator.clone(), e.childs[0] ];
+        
+        if(!current[0].divide(current, e.childs[1].head)) {
+          throw new Error('Internal Error: commonDenominator(0)');
+        }
+
+        return new Node({
+            type: 'operator',
+            value: '*'
+          }, current);
+      }).concat(result);
     }
     
     result = new Node({
