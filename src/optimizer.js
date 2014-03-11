@@ -452,6 +452,30 @@ rules.push(function groupLiterals(root) {
           literals[pair.literal] = pair.constant;
         }
       }
+      
+      else if(root.childs[i].head.type === 'literal') {
+        if(root.head.value === '+') {
+          if(literals[root.childs[i].head.value]) {
+            literals[root.childs[i].head.value] += 1;
+            modified = true;
+          }
+          else {
+            literals[root.childs[i].head.value] = 1;
+          }
+        } 
+        else {
+          if(literals[root.childs[i].head.value]) {
+            literals[root.childs[i].head.value] -= 1;
+            modified = true;
+          }
+          else {
+            literals[root.childs[i].head.value] = modified ? -1 : 1;
+          }
+        }
+        
+        root.childs.splice(i, 1);
+        --i;
+      }
     }
     
     for(i = 0; i < root.childs.length; ++i) {
@@ -460,6 +484,19 @@ rules.push(function groupLiterals(root) {
       if(pair) {
         current = root.childs[i].childs;
         current[current[0].head.type === 'constant' ? 0 : 1].head.value = literals[pair.literal];
+        delete literals[pair.literal];
+      }
+    }
+    
+    for(i in literals) {
+      if(literals[i] != 1) {
+        root.childs.push(new Node({ type: 'operator', value: '*' }, [
+          new Leaf({ type: 'constant', value: literals[i] }),
+          new Leaf({ type: 'literal', value: i })
+        ]));
+      }
+      else {
+        root.childs.push(new Leaf({ type: 'literal', value: i }));
       }
     }
   }
