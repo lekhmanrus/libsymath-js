@@ -198,16 +198,24 @@ rules.push(function groupingByMultiplication(root) {
 });
 
 
-// 2 / 4 / 2 -> (2 * 2) / 4
-// 6 / a / 3 / a -> (6 * 3) / (a * a)
+// 2 / 4 / 2 -> 2 / (4 * 2)
+// 6 / a / 3 / a -> (6 * a) / (a * 3)
 rules.push(function fractionsNormalization(root) {
   var modified = applyToChilds(root, fractionsNormalization);
   
   if(root.head.type === 'operator' && root.head.value === '/') {
     var i, lhs = [], rhs = [];
     
-    for(i = 0; i < root.childs.length; ++i) {
+    for(i = 0; i < Math.min(2, root.childs.length); ++i) {
       if(i % 2 === 0) {
+        lhs.push(root.childs[i]);
+      }
+      else {
+        rhs.push(root.childs[i]);
+      }
+    }
+    for(i = 2; i < root.childs.length; ++i) {
+      if(i % 2 === 1) {
         lhs.push(root.childs[i]);
       }
       else {

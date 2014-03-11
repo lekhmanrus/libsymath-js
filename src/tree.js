@@ -157,8 +157,11 @@ Leaf.prototype.divide = function(root, symbol) {
   }
   
   if(this.head.type === 'literal' && this.head.value === symbol.value) {
-    var i = root.childs.indexOf(this);
-    root.childs.splice(i, 1);
+    /*var i = root.childs.indexOf(this);
+    root.childs.splice(i, 1);*/
+    this.head.type = 'constant';
+    this.head.value = 1;
+    
     return true;
   }
   
