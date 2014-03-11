@@ -335,7 +335,7 @@ Lexer.prototype.getNextToken = function() {
   }
   else
   if(S_LETTER.test(this.buffer[this.offset])) {
-    while(this.offset < length && S_LETTER.test(this.buffer[this.offset])) {
+    while(this.offset < length && (S_LETTER.test(this.buffer[this.offset]) || S_DIGIT.test(this.buffer[this.offset]))) {
       ++this.offset;
     }
   }
@@ -669,16 +669,24 @@ rules.push(function groupingByMultiplication(root) {
 });
 
 
-// 2 / 4 / 2 -> (2 * 2) / 4
-// 6 / a / 3 / a -> (6 * 3) / (a * a)
+// 2 / 4 / 2 -> 2 / (4 * 2)
+// 6 / a / 3 / a -> (6 * a) / (a * 3)
 rules.push(function fractionsNormalization(root) {
   var modified = applyToChilds(root, fractionsNormalization);
   
   if(root.head.type === 'operator' && root.head.value === '/') {
     var i, lhs = [], rhs = [];
     
-    for(i = 0; i < root.childs.length; ++i) {
+    for(i = 0; i < Math.min(2, root.childs.length); ++i) {
       if(i % 2 === 0) {
+        lhs.push(root.childs[i]);
+      }
+      else {
+        rhs.push(root.childs[i]);
+      }
+    }
+    for(i = 2; i < root.childs.length; ++i) {
+      if(i % 2 === 1) {
         lhs.push(root.childs[i]);
       }
       else {
@@ -923,6 +931,30 @@ rules.push(function groupLiterals(root) {
           literals[pair.literal] = pair.constant;
         }
       }
+      
+      else if(root.childs[i].head.type === 'literal') {
+        if(root.head.value === '+') {
+          if(literals[root.childs[i].head.value]) {
+            literals[root.childs[i].head.value] += 1;
+            modified = true;
+          }
+          else {
+            literals[root.childs[i].head.value] = 1;
+          }
+        } 
+        else {
+          if(literals[root.childs[i].head.value]) {
+            literals[root.childs[i].head.value] -= 1;
+            modified = true;
+          }
+          else {
+            literals[root.childs[i].head.value] = modified ? -1 : 1;
+          }
+        }
+        
+        root.childs.splice(i, 1);
+        --i;
+      }
     }
     
     for(i = 0; i < root.childs.length; ++i) {
@@ -931,6 +963,19 @@ rules.push(function groupLiterals(root) {
       if(pair) {
         current = root.childs[i].childs;
         current[current[0].head.type === 'constant' ? 0 : 1].head.value = literals[pair.literal];
+        delete literals[pair.literal];
+      }
+    }
+    
+    for(i in literals) {
+      if(literals[i] != 1) {
+        root.childs.push(new Node({ type: 'operator', value: '*' }, [
+          new Leaf({ type: 'constant', value: literals[i] }),
+          new Leaf({ type: 'literal', value: i })
+        ]));
+      }
+      else {
+        root.childs.push(new Leaf({ type: 'literal', value: i }));
       }
     }
   }
@@ -1271,8 +1316,9 @@ Leaf.prototype.divide = function(root, symbol) {
   }
   
   if(this.head.type === 'literal' && this.head.value === symbol.value) {
-    var i = root.childs.indexOf(this);
-    root.childs.splice(i, 1);
+    this.head.type = 'constant';
+    this.head.value = 1;
+    
     return true;
   }
   
@@ -1401,7 +1447,7 @@ Leaf.prototype.getConstantValue = function() {
 };
 
 Node.prototype.serializeTeX = function(priority) {
-  priority === priority || -1;
+  priority = priority || -1;
   
   var result = '',
       currentPriority = Utils.getOperationPriority(this.head.value);
