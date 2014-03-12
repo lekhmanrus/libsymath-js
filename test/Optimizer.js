@@ -597,7 +597,98 @@ module.exports.multiplication = {
     test.strictEqual(root.childs[1].head.value, 2);
     
     test.done();
-  }
+  },
+  
+  test9: function(test) {
+    var expression = new Expression('b ^ 3 * b').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '^');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'b');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 4);
+    
+    test.done();
+  },
+  
+  test10: function(test) {
+    var expression = new Expression('b ^ 3 * b / b').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '^');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'b');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 3);
+    
+    test.done();
+  },
+  
+  test11: function(test) {
+    var expression = new Expression('b ^ (1/2) * sqrt(b)').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'literal');
+    test.strictEqual(root.head.value, 'b');
+    
+    test.done();
+  },
+  
+  test12: function(test) {
+    var expression = new Expression('(b ^ 2) ^ 3').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '^');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'literal');
+    test.strictEqual(root.childs[0].head.value, 'b');
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 6);
+    
+    test.done();
+  },
+  
+  test13: function(test) {
+    var expression = new Expression('sqrt(b) ^ 2').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'literal');
+    test.strictEqual(root.head.value, 'b');
+    
+    test.done();
+  },
   
 };
 

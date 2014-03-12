@@ -703,6 +703,25 @@ rules.push(function constantsSquareRoot(root) {
   return modified;
 });
 
+// sqrt(a) -> a^(1/2)
+rules.push(function convertSqrtToPower(root) {
+  var modified = applyToChilds(root, convertSqrtToPower);
+  
+  // TODO
+  
+  return false;
+});
+
+// b^3 * b^2 -> b^5
+// b^3 * b   -> b^4
+rules.push(function powersGroup(root) {
+  var modified = applyToChilds(root, powersGroup);
+  
+  // TODO
+  
+  return false;
+});
+
 
 rules.push(function stripDepth(root) {
   var modified = applyToChilds(root, stripDepth),
