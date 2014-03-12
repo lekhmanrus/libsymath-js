@@ -66,21 +66,26 @@ rules.push(function constantsAddition(root) {
   var modified = applyToChilds(root, constantsAddition);
   
   if(root.head.type === 'operator' && root.head.value === '+') {
-    var i, result = 0, ops = 0;
+    var i, result = 0, ops = 0, first;
     
     for(i = 0; i < root.childs.length; ++i) {
       if(root.childs[i].head.type === 'constant') {
         result += root.childs[i].head.value;
-        root.childs.splice(i, 1);
+        if(ops > 0) {
+          root.childs.splice(i, 1);
+          --i;
+        }
+        else {
+          first = i;
+        }
         ++ops;
-        --i;
       }
     }
     
     modified = modified || (ops > 1);
     
     if(ops > 0 || root.childs.length === 0) {
-      root.childs.push(new Leaf({ type: 'constant', value: result }));
+      root.childs[first].head.value = result;
     }
   }
   
@@ -94,7 +99,7 @@ rules.push(function constantsSubtraction(root) {
   var modified = applyToChilds(root, constantsSubtraction);
   
   if(root.head.type === 'operator' && root.head.value === '-') {
-    var i, result = 0, ops = 0;
+    var i, result = 0, ops = 0, first;
     
     for(i = 0; i < root.childs.length; ++i) {
       if(root.childs[i].head.type === 'constant') {
@@ -105,16 +110,21 @@ rules.push(function constantsSubtraction(root) {
           result -= root.childs[i].head.value;
         }
         
-        root.childs.splice(i, 1);
+        if(ops > 0) {
+          root.childs.splice(i, 1);
+          --i;
+        }
+        else {
+          first = i;
+        }
         ++ops;
-        --i;
       }
     }
     
     modified = modified || (ops > 1);
     
     if(ops > 0 || root.childs.length === 0) {
-      root.childs.push(new Leaf({ type: 'constant', value: result }));
+      root.childs[first].head.value = result;
     }
   }
   
