@@ -681,14 +681,46 @@ module.exports.multiplication = {
     
     test.notStrictEqual(root, undefined);
     
-    test.notStrictEqual(root, undefined);
-    
     test.strictEqual(root.childs, undefined);
     test.strictEqual(root.head.type, 'literal');
     test.strictEqual(root.head.value, 'b');
     
     test.done();
   },
+  
+  test14: function(test) {
+    var expression = new Expression('1/3 * 2').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 2);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 3);
+    
+    test.done();
+  },
+  
+  test15: function(test) {
+    var expression = new Expression('1/3 * 3').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'constant');
+    test.strictEqual(root.head.value, 1);
+    
+    test.done();
+  }
   
 };
 

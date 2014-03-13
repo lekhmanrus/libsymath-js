@@ -34,3 +34,46 @@ module.exports.getOperationPriority = function(value) {
   
   return -1;
 };
+
+function Map(comparer) {
+  this.keys   = [];
+  this.values = [];
+  
+  this.comparer = comparer || function(e1, e2) {
+    return e1 == e2;
+  };
+}
+
+Map.prototype.get = function(key) {
+  return this.values[this.idx_(key)];
+};
+
+Map.prototype.set = function(key, value) {
+  var idx = this.idx_(key);
+  
+  if(idx === -1) {
+    this.keys.push(key);
+    this.values.push(value);
+  }
+  else {
+    this.values[idx] = value;
+  }
+};
+
+Map.prototype.has = function(key) {
+  return this.idx_(key);
+};
+
+Map.prototype.idx_ = function(key) {
+  var i;
+  
+  for(i = 0; i < this.keys.length; ++i) {
+    if(this.comparer(key, this.keys[i])) {
+      return i;
+    }
+  }
+  
+  return -1;
+};
+
+module.exports.Map = Map;

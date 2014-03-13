@@ -332,5 +332,25 @@ Leaf.prototype.serializeTeX = function() {
   return this.head.value + '';
 };
 
+Node.prototype.compare = function(rhs) {
+  if(!(rhs instanceof Leaf) || rhs.head.type !== this.head.type || rhs.head.value !== this.head.value || this.childs.length != rhs.childs.length) {
+   return false; 
+  }
+  
+  var i;
+  
+  for(i = 0; i < this.childs.length; ++i) {
+    if(!this.childs[i].compare(rhs.childs[i])) {
+      return false;
+    }
+  }
+  
+  return true;
+};
+
+Leaf.prototype.compare = function(rhs) {
+  return rhs instanceof Leaf && rhs.head.type === this.head.type && rhs.head.value === this.head.value;
+};
+
 module.exports.Node = Node;
 module.exports.Leaf = Leaf;
