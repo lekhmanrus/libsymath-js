@@ -508,8 +508,8 @@ rules.push(function groupLiterals(root) {
       }
     }
     
-    for(i in literals) {
-      if(literals[i] != 1) {
+    for(i in Object.getOwnPropertyNames(literals)) {
+      if(literals[i] !== 1) {
         root.childs.push(new Node({ type: 'operator', value: '*' }, [
           new Leaf({ type: 'constant', value: literals[i] }),
           new Leaf({ type: 'literal', value: i })
@@ -715,11 +715,52 @@ rules.push(function convertSqrtToPower(root) {
 // b^3 * b^2 -> b^5
 // b^3 * b   -> b^4
 rules.push(function powersGroup(root) {
-  var modified = applyToChilds(root, powersGroup);
+  var modified = applyToChilds(root, powersGroup),
+      i, first, powers = { }, current;
   
-  // TODO
+  if(root.head.type === 'operator' && root.head.value === '*') {
+    for(i = 0; i < root.childs.length; ++i) {
+      current = root.childs[i];
+      
+      if(current.head.type === 'operator' && current.head.value === '^') {
+        if(powers[current.childs[0]]) {
+          powers[current.childs[0]].push(current.childs[1]);
+          root.childs.splice(i, 1);
+          --i;
+        }
+        else {
+          powers[current.childs[0]] = [ current.childs[1] ];
+        }
+      }
+      else if(current.head.type === 'literal') {
+        if(powers[current.head.value]) {
+          powers[current.head.value].push(new Leaf({ type: 'constant', value: 1 }));
+          root.childs.splice(i, 1);
+          --i;
+        }
+        else {
+          powers[current.head.value] = [ new Leaf({ type: 'constant', value: 1 }) ];
+        }
+      }
+    }
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      current = root.childs[i];
+      
+      if(current.head.type === 'operator' && current.head.value === '^' && powers[current.childs[0]].length > 1) {
+        current.childs[1] = new Node({ type: 'operator', value: '+' }, powers[current.childs[0]]);
+        modified = true;
+      }
+      else if(current.head.type === 'literal' && powers[current.head.value].length > 1) {
+        var power = new Node({ type: 'operator', value: '+' }, powers[current.head.value]);
+        
+        root.childs[i] = new Node({type: 'operator', value: '^' }, [root.childs[i], power]);
+        modified = true;
+      }
+    }
+  }
   
-  return false;
+  return modified;
 });
 
 
