@@ -202,6 +202,10 @@ ExpressionTree.prototype.optimize = function() {
   return this;
 };
 
+ExpressionTree.prototype.nice = function(type) {
+  //TODO
+};
+
 ExpressionTree.prototype.getRoot = function() {
   return this.privateRoot_;
 };
