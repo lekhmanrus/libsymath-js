@@ -105,6 +105,9 @@ Node.prototype.getSeparableSymbols = function(isExtended) {
       return getSharedExtendedSymbols(this);
     }
   }
+  else if(this.head.value === '/') {
+    return this.childs[0].getSeparableSymbols(isExtended);
+  }
   else {
     return getAllSymbols(this, isExtended);
   }
@@ -133,6 +136,11 @@ Node.prototype.divide = function(root, symbol) {
     else if(this.head.value === '^' && this.childs[0].head.type === symbol.type && this.childs[0].head.value === symbol.value) {
       this.childs[1] = new Node({ type: 'operator', value: '-' }, [this.childs[1], new Leaf({ type: 'constant', value: 1 })]);
       return true;
+    }
+    
+    else if(this.head.value === '/') {
+      return this.childs[0].divide(root, symbol);
+      //this.childs[1] = new Node({ type: 'operator', value: '-' }, [this.childs[1], new Leaf({ type: 'constant', value: 1 })]);
     }
     
     else {

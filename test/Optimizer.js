@@ -720,6 +720,27 @@ module.exports.multiplication = {
     test.strictEqual(root.head.value, 1);
     
     test.done();
+  },
+  
+  bugfix2: function(test) {
+    var expression = new Expression('1/3 * 1/6').optimize(),
+        root = expression.getRoot();
+    
+    test.notStrictEqual(root, undefined);
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 1);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 18);
+    
+    test.done();
   }
   
 };
