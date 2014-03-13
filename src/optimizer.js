@@ -707,6 +707,7 @@ rules.push(function constantsSquareRoot(root) {
   return modified;
 });
 
+
 // sqrt(a) -> a^(1/2)
 rules.push(function convertSqrtToPower(root) {
   var modified = applyToChilds(root, convertSqrtToPower);
@@ -725,8 +726,9 @@ rules.push(function convertSqrtToPower(root) {
     return true;
   }
   
-  return false;
+  return modified;
 });
+
 
 // (a^2) ^ b -> a^(2*b)
 rules.push(function powersCascade(root) {
@@ -739,8 +741,9 @@ rules.push(function powersCascade(root) {
     return true;
   }
   
-  return false;
+  return modified;
 });
+
 
 // b^3 * b^2 -> b^5
 // b^3 * b   -> b^4
@@ -798,6 +801,57 @@ rules.push(function powersGroup(root) {
         }
       }
     }
+  }
+  
+  return modified;
+});
+
+
+// (1/3) * (1/2)
+rules.push(function fractionsMultiplier(root) {
+  var modified = applyToChilds(root, fractionsMultiplier);
+  
+  if(root.head.type === 'operator' && root.head.value === '*') {
+    var numerator = [], denominator = [],
+        i, current, found;
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      if(root.childs[i].head.type === 'operator' && root.childs[i].head.value === '/') {
+        found = true;
+        break;
+      }
+    }
+    if(!found) {
+      return false;
+    }
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      current = root.childs[i];
+      
+      if(current.head.type === 'operator' && current.head.value === '/') {
+        if(current.childs.length > 2) {
+          // should perform new optimizer iteration and normalize fraction first
+          return true;
+        }
+        
+        numerator.push(current.childs[0]);
+        denominator.push(current.childs[1]);
+      }
+      
+      if(current.head.type === 'constant' || current.head.type === 'literal' || current.head.type === 'complex') {
+        numerator.push(current);
+      }
+    }
+    
+    root.head.type = 'operator';
+    root.head.value = '/';
+    
+    root.childs = [
+      new Node({ type: 'operator', value: '*' }, numerator),
+      new Node({ type: 'operator', value: '*' }, denominator)
+    ];
+    
+    return true;
   }
   
   return modified;
