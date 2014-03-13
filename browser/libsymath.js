@@ -493,6 +493,7 @@ Optimizer.prototype.process = function() {
   
   do {
     modified = false;
+    this.root_.reduce();
     
     for(i = 0; i < rules.length; ++i) {
       modified = rules[i](this.root_) || modified;
@@ -528,6 +529,9 @@ function uniqueTokens(tokens) {
   
   return tmp;
 }
+function treeComparer(e1, e2) {
+  return e1.compare(e2);
+}
 
 // RULES:
 
@@ -537,21 +541,26 @@ rules.push(function constantsAddition(root) {
   var modified = applyToChilds(root, constantsAddition);
   
   if(root.head.type === 'operator' && root.head.value === '+') {
-    var i, result = 0, ops = 0;
+    var i, result = 0, ops = 0, first;
     
     for(i = 0; i < root.childs.length; ++i) {
       if(root.childs[i].head.type === 'constant') {
         result += root.childs[i].head.value;
-        root.childs.splice(i, 1);
+        if(ops > 0) {
+          root.childs.splice(i, 1);
+          --i;
+        }
+        else {
+          first = i;
+        }
         ++ops;
-        --i;
       }
     }
     
     modified = modified || (ops > 1);
     
     if(ops > 0 || root.childs.length === 0) {
-      root.childs.push(new Leaf({ type: 'constant', value: result }));
+      root.childs[first].head.value = result;
     }
   }
   
@@ -565,7 +574,7 @@ rules.push(function constantsSubtraction(root) {
   var modified = applyToChilds(root, constantsSubtraction);
   
   if(root.head.type === 'operator' && root.head.value === '-') {
-    var i, result = 0, ops = 0;
+    var i, result = 0, ops = 0, first;
     
     for(i = 0; i < root.childs.length; ++i) {
       if(root.childs[i].head.type === 'constant') {
@@ -576,16 +585,21 @@ rules.push(function constantsSubtraction(root) {
           result -= root.childs[i].head.value;
         }
         
-        root.childs.splice(i, 1);
+        if(ops > 0) {
+          root.childs.splice(i, 1);
+          --i;
+        }
+        else {
+          first = i;
+        }
         ++ops;
-        --i;
       }
     }
     
     modified = modified || (ops > 1);
     
     if(ops > 0 || root.childs.length === 0) {
-      root.childs.push(new Leaf({ type: 'constant', value: result }));
+      root.childs[first].head.value = result;
     }
   }
   
@@ -970,7 +984,7 @@ rules.push(function groupLiterals(root) {
     }
     
     for(i in literals) {
-      if(literals[i] != 1) {
+      if(literals[i] !== 1) {
         root.childs.push(new Node({ type: 'operator', value: '*' }, [
           new Leaf({ type: 'constant', value: literals[i] }),
           new Leaf({ type: 'literal', value: i })
@@ -1159,6 +1173,156 @@ rules.push(function constantsSquareRoot(root) {
     root.head.value = Math.round(100 * Math.sqrt(constValue)) / 100;
     root.childs = undefined;
     root['__proto__'] = Leaf.prototype;
+  }
+  
+  return modified;
+});
+
+
+// sqrt(a) -> a^(1/2)
+rules.push(function convertSqrtToPower(root) {
+  var modified = applyToChilds(root, convertSqrtToPower);
+  
+  if(root.head.type === 'func' && root.head.value === 'sqrt') {
+    root.head.type = 'operator';
+    root.head.value = '^';
+    
+    var power = new Node({ type: 'operator', value: '/' }, [
+      new Leaf({ type: 'constant', value: 1 }),
+      new Leaf({ type: 'constant', value: 2 })
+    ]);
+    
+    root.childs = [ root.childs[0], power ];
+    
+    return true;
+  }
+  
+  return modified;
+});
+
+
+// (a^2) ^ b -> a^(2*b)
+rules.push(function powersCascade(root) {
+  var modified = applyToChilds(root, powersCascade);
+  
+  if(root.head.type === 'operator' && root.head.value === '^' && root.childs.length > 2) {
+    root.childs[1] = new Node({ type: 'operator', value: '*' }, root.childs.slice(1));
+    root.childs.splice(2);
+    
+    return true;
+  }
+  
+  return modified;
+});
+
+
+// b^3 * b^2 -> b^5
+// b^3 * b   -> b^4
+rules.push(function powersGroup(root) {
+  var modified = applyToChilds(root, powersGroup),
+      i, first, powers = new Utils.Map(treeComparer), current, curPower;
+  
+  if(root.head.type === 'operator' && root.head.value === '*') {
+    for(i = 0; i < root.childs.length; ++i) {
+      current = root.childs[i];
+      
+      if(current.head.type === 'operator' && current.head.value === '^') {
+        curPower = powers.get(current.childs[0]);
+        if(curPower) {
+          curPower.push(current.childs[1]);
+          root.childs.splice(i, 1);
+          --i;
+        }
+        else {
+          powers.set(current.childs[0], [ current.childs[1] ]);
+        }
+      }
+      else if(current.head.type === 'literal') {
+        curPower = powers.get(current);
+        if(curPower) {
+          curPower.push(new Leaf({ type: 'constant', value: 1 }));
+          root.childs.splice(i, 1);
+          --i;
+        }
+        else {
+          powers.set(current, [ new Leaf({ type: 'constant', value: 1 }) ]);
+        }
+      }
+    }
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      current = root.childs[i];
+      
+      if(current.head.type === 'operator' && current.head.value === '^') {
+        curPower = powers.get(current.childs[0]);
+        
+        if(curPower.length > 1) {
+          current.childs[1] = new Node({ type: 'operator', value: '+' }, curPower);
+          modified = true;
+        }
+      }
+      else if(current.head.type === 'literal') {
+        curPower = powers.get(current);
+        
+        if(curPower.length > 1) {
+          var power = new Node({ type: 'operator', value: '+' }, curPower);
+
+          root.childs[i] = new Node({type: 'operator', value: '^' }, [root.childs[i], power]);
+          modified = true;
+        }
+      }
+    }
+  }
+  
+  return modified;
+});
+
+
+// (1/3) * (1/2)
+rules.push(function fractionsMultiplier(root) {
+  var modified = applyToChilds(root, fractionsMultiplier);
+  
+  if(root.head.type === 'operator' && root.head.value === '*') {
+    var numerator = [], denominator = [],
+        i, current, found;
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      if(root.childs[i].head.type === 'operator' && root.childs[i].head.value === '/') {
+        found = true;
+        break;
+      }
+    }
+    if(!found) {
+      return false;
+    }
+    
+    for(i = 0; i < root.childs.length; ++i) {
+      current = root.childs[i];
+      
+      if(current.head.type === 'operator' && current.head.value === '/') {
+        if(current.childs.length > 2) {
+          // should perform new optimizer iteration and normalize fraction first
+          return true;
+        }
+        
+        numerator.push(current.childs[0]);
+        denominator.push(current.childs[1]);
+      }
+      
+      if(current.head.type === 'constant' || current.head.type === 'literal' || current.head.type === 'complex') {
+        numerator.push(current);
+      }
+    }
+    
+    root.head.type = 'operator';
+    root.head.value = '/';
+    
+    root.childs = [
+      new Node({ type: 'operator', value: '*' }, numerator),
+      new Node({ type: 'operator', value: '*' }, denominator)
+    ];
+    
+    return true;
   }
   
   return modified;
@@ -1533,6 +1697,26 @@ Leaf.prototype.serializeTeX = function() {
   return this.head.value + '';
 };
 
+Node.prototype.compare = function(rhs) {
+  if(!(rhs instanceof Leaf) || rhs.head.type !== this.head.type || rhs.head.value !== this.head.value || this.childs.length != rhs.childs.length) {
+   return false; 
+  }
+  
+  var i;
+  
+  for(i = 0; i < this.childs.length; ++i) {
+    if(!this.childs[i].compare(rhs.childs[i])) {
+      return false;
+    }
+  }
+  
+  return true;
+};
+
+Leaf.prototype.compare = function(rhs) {
+  return rhs instanceof Leaf && rhs.head.type === this.head.type && rhs.head.value === this.head.value;
+};
+
 module.exports.Node = Node;
 module.exports.Leaf = Leaf;
 },{"./utils":8}],8:[function(require,module,exports){
@@ -1572,4 +1756,47 @@ module.exports.getOperationPriority = function(value) {
   
   return -1;
 };
+
+function Map(comparer) {
+  this.keys   = [];
+  this.values = [];
+  
+  this.comparer = comparer || function(e1, e2) {
+    return e1 == e2;
+  };
+}
+
+Map.prototype.get = function(key) {
+  return this.values[this.idx_(key)];
+};
+
+Map.prototype.set = function(key, value) {
+  var idx = this.idx_(key);
+  
+  if(idx === -1) {
+    this.keys.push(key);
+    this.values.push(value);
+  }
+  else {
+    this.values[idx] = value;
+  }
+};
+
+Map.prototype.has = function(key) {
+  return this.idx_(key);
+};
+
+Map.prototype.idx_ = function(key) {
+  var i;
+  
+  for(i = 0; i < this.keys.length; ++i) {
+    if(this.comparer(key, this.keys[i])) {
+      return i;
+    }
+  }
+  
+  return -1;
+};
+
+module.exports.Map = Map;
 },{}]},{},["Focm2+"])
