@@ -70,3 +70,34 @@ module.exports.TeX = {
   }
   
 };
+
+module.exports.ComplexExpressions = {
+  
+  test1: function(test) {
+    var expression = new Expression('((7 - 6)/6 + 9)/(1/36+1/25 - 31/16)/(169/24)').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeTeX(), 'TODO');
+    
+    test.done();
+  },
+      
+  test2: function(test) {
+    var expression = new Expression('((1/2 / 5/4 + 7/5 / 11/7 - 3/11)*3)/((3/2 + 1/4)/ 55/3 )').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeTeX(), '32');
+    
+    test.done();
+  },
+    
+    test3: function(test) {
+    var expression = new Expression('((sqrt(x)+1)/ (x*sqrt(x) + x + sqrt(x)))/(1/(x*x - sqrt(x)))').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeTeX(), '{x}-{1}');
+    
+    test.done();
+  }
+    
+};
