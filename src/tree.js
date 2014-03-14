@@ -302,9 +302,12 @@ Node.prototype.serializeTeX = function(priority) {
       currentPriority = Utils.getOperationPriority(this.head.value);
   
   if(this.head.type === 'operator' && ['-', '+', '*', '^'].indexOf(this.head.value) !== -1) {
+    var op = this.head.value;
+    if(this.head.value === '*'/* && this.childs[0].type === 'constant'*/)
+      op = ' ';
     result = this.childs.map(function(e) {
       return e.serializeTeX(currentPriority);
-    }).join('} ' + this.head.value + ' {');
+    }).join('}' + op + '{');
     
     if(currentPriority < priority) {
       return '({' + result + '})';
@@ -322,19 +325,21 @@ Node.prototype.serializeTeX = function(priority) {
     return '\\sqrt{' + this.childs[0].serializeTeX() + '}';
   }
   
-  if(this.head.type === 'func') {
-    var prefix = '';
-    if(['sin', 'cos'].indexOf(this.head.value) !== -1) {
-      prefix = '\\';
-    }
-    
-    return prefix + this.head.value + '( ' + this.childs[0].serializeTeX() + ' )';
-  }
+  if(this.head.type === 'func')
+    return this.head.value + '(' + this.childs[0].serializeTeX() + ')';
+
 };
 
 Leaf.prototype.serializeTeX = function() {
   if(this.head.type === 'complex') {
-    return this.head.value + 'i ';
+    if(this.head.value === -1)
+      return '-i';
+    else if(this.head.value === 1)
+      return 'i';
+    else if(this.head.value === 0)
+      return '';
+    else
+      return this.head.value + 'i';
   }
   
   return this.head.value + '';

@@ -10,7 +10,7 @@ module.exports.TeX = {
     var expression = new Expression('30 * b * c * c').optimize();
     
     test.notStrictEqual(expression.getRoot(), undefined);
-    test.strictEqual(expression.getRoot().serializeTeX(), '{b} * {{c} ^ {2}} * {30}');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{b} {{c}^{2}} {30}');
     
     test.done();
   },
@@ -19,7 +19,7 @@ module.exports.TeX = {
     var expression = new Expression('b * b * b / b').optimize();
     
     test.notStrictEqual(expression.getRoot(), undefined);
-    test.strictEqual(expression.getRoot().serializeTeX(), '{b} ^ {2}');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{b}^{2}');
     
     test.done();
   },
@@ -28,7 +28,7 @@ module.exports.TeX = {
     var expression = new Expression('b ^ (1/2) / b').optimize();
     
     test.notStrictEqual(expression.getRoot(), undefined);
-    test.strictEqual(expression.getRoot().serializeTeX(), '{b} ^ {\\frac{-1}{2}}');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{b}^{\\frac{-1}{2}}');
     
     test.done();
   },
@@ -37,7 +37,7 @@ module.exports.TeX = {
     var expression = new Expression('a + a + b').optimize();
     
     test.notStrictEqual(expression.getRoot(), undefined);
-    test.strictEqual(expression.getRoot().serializeTeX(), '{{a} * {2}} + {b}');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{a} {2}}+{b}');
     
     test.done();
   },
