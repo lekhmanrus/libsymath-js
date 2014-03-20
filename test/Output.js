@@ -4,6 +4,10 @@
 
 var Expression = require('..').Expression;
 
+module.exports.Nicer = {
+  // TODO
+};
+
 module.exports.TeX = {
   
   test1: function(test) {
