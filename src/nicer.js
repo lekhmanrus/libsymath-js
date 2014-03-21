@@ -23,3 +23,18 @@ Nicer.prototype.nice = function(root) {
     this.niceFactorized(root);
   }
 };
+
+Nicer.prototype.sort = function(root) {
+  var i;
+  
+  if(root.childs) {
+    for(i = 0; i < root.childs.length; ++i) {
+      this.sort(root.childs[i]);
+      root.childs[i].calcPowerValue();
+    }
+    
+    root.childs = root.childs.sort(function(lhs, rhs) {
+      return lhs.power_ - rhs.power_;
+    });
+  }
+};

@@ -545,5 +545,29 @@ Leaf.prototype.compare = function(rhs) {
   return rhs instanceof Leaf && rhs.head.type === this.head.type && rhs.head.value === this.head.value;
 };
 
+Node.prototype.calcPowerValue = function() {
+  if(this.head.type === 'operator') {
+    if(this.head.value === '*') {
+      this.power_ = this.childs.reduce(function(e, prev) {
+        return prev + e.power_;
+      }, 0);
+    }
+  }
+  
+  if(this.head.type === 'func') {
+    return this.power_ = 999;
+  }
+};
+
+Leaf.prototype.calcPowerValue = function() {
+  if(this.head.type === 'constant' || this.head.type === 'complex') {
+    return this.power_ = 0;
+  }
+  
+  if(this.head.type === 'literal') {
+    return this.power_ = 1;
+  }
+};
+
 module.exports.Node = Node;
 module.exports.Leaf = Leaf;
