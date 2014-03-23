@@ -214,54 +214,48 @@ rules.push(function groupingByMultiplication(root) {
 });
 
 
-// 2 / 4 / 2 -> 2 / (4 * 2)
-// 6 / a / 3 / a -> (6 * a) / (a * 3)
+// (2 / 4) / 2 -> 2 / (4 * 2)
+// (6 / a) / (3 / a) -> (6 * a) / (a * 3)
 rules.push(function fractionsNormalization(root) {
   var modified = applyToChilds(root, fractionsNormalization);
   
   if(root.head.type === 'operator' && root.head.value === '/') {
-    var i, lhs = [], rhs = [];
-    
-    for(i = 0; i < Math.min(2, root.childs.length); ++i) {
-      if(i % 2 === 0) {
-        lhs.push(root.childs[i]);
+    if(root.childs.length == 2 && (root.childs[0].head.value === '/' || root.childs[1].head.value === '/')) {
+      var lhs = [], rhs = [];
+      
+      if(root.childs[0].head.value === '/') {
+        lhs.push(root.childs[0].childs[0]);
+        rhs.push(root.childs[0].childs[1]);
       }
       else {
-        rhs.push(root.childs[i]);
+        lhs.push(root.childs[0]);
       }
-    }
-    for(i = 2; i < root.childs.length; ++i) {
-      if(i % 2 === 1) {
-        lhs.push(root.childs[i]);
+      
+      if(root.childs[1].head.value === '/') {
+        lhs.push(root.childs[1].childs[1]);
+        rhs.push(root.childs[1].childs[0]);
       }
       else {
-        rhs.push(root.childs[i]);
+        rhs.push(root.childs[1]);
       }
+      
+      lhs = lhs.filter(function(e) { return e !== undefined; });
+      rhs = rhs.filter(function(e) { return e !== undefined; });
+      
+      root.childs = [
+        new Node({
+          type: 'operator',
+          value: '*'
+        }, lhs),
+        
+        new Node({
+          type: 'operator',
+          value: '*'
+        }, rhs)
+      ];
+      
+      return true;
     }
-    
-    modified = modified || lhs.length > 1 || rhs.length > 1;
-    
-    if(lhs.length > 1) {
-      lhs = new Node({
-        type: 'operator',
-        value: '*'
-      }, lhs);
-    }
-    else {
-      lhs = lhs[0];
-    }
-    
-    if(rhs.length > 1) {
-      rhs = new Node({
-        type: 'operator',
-        value: '*'
-      }, rhs);
-    }
-    else {
-      rhs = rhs[0];
-    }
-    
-    root.childs = [ lhs, rhs ];
   }
   
   return modified;
@@ -540,8 +534,11 @@ rules.push(function commonDenominator(root) {
     
     for(i = 0; i < root.childs.length; ++i) {
       if(root.childs[i].head.type === 'operator' && root.childs[i].head.value === '/') {
+        if(root.childs[i].childs.length < 2 || root.childs[i].childs[1] instanceof Node) {
+          return false;
+        }
+        
         found = true;
-        break;
       }
     }
     

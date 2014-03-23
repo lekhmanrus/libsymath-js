@@ -19,7 +19,7 @@ Node.prototype.reduce = function() {
   for(i = 0; i < this.childs.length; ++i) {
     this.childs[i].reduce();
     
-    if(this.childs[i].head.type === 'operator' && this.head.type === 'operator' && this.childs[i].head.value === this.head.value) {
+    if(this.childs[i].head.type === 'operator' && this.head.type === 'operator' && this.childs[i].head.value === this.head.value && this.childs[i].head.value != '/') {
       this.childs = this.childs.slice(0, i).concat(this.childs[i].childs).concat(this.childs.slice(i + 1));
     }
   }
@@ -118,7 +118,7 @@ Leaf.prototype.getSeparableSymbols = function() {
 };
 
 Node.prototype.divide = function(root, symbol) {  
-  var i = 0, divided = false;
+  var i = 0, divided = symbol.value;
   
   if(this.head.type === 'operator') {
     
@@ -139,14 +139,28 @@ Node.prototype.divide = function(root, symbol) {
     }
     
     else if(this.head.value === '/') {
-      return this.childs[0].divide(root, symbol);
-      //this.childs[1] = new Node({ type: 'operator', value: '-' }, [this.childs[1], new Leaf({ type: 'constant', value: 1 })]);
+      if(!this.childs[0].divide(root, symbol)) {
+        this.childs[1] = new Node({ type: 'operator', value: '*' }, [this.childs[1], new Leaf(symbol)]);
+      }
+      return true;
     }
     
     else {
-      while(i < this.childs.length && !divided) {
-        divided = this.childs[i].divide(this, symbol);
-        ++i;
+      while(divided !== true && divided !== false) {
+        i = 0;
+        
+        while(i < this.childs.length) {
+          divided = this.childs[i].divide(this, symbol);
+          ++i;
+          
+          if(divided === true || divided === 1) {
+            divided = true;
+            break;
+          }
+          else if(divided !== false) {
+            symbol.value = divided;
+          }
+        }
       }
       
       return divided;
@@ -162,6 +176,16 @@ Leaf.prototype.divide = function(root, symbol) {
   if(this.head.type === 'constant' && (this.head.value % symbol.value) === 0) {
     this.head.value /= symbol.value;
     return true;
+  }
+  
+  if(this.head.type === 'constant' && symbol.type === 'constant') {
+    var current = Utils.gcd(this.head.value, symbol.value);
+    if(current === 1) {
+      return false;
+    }
+    
+    this.head.value /= current;
+    return symbol.value / current;
   }
   
   if(this.head.type === 'literal' && this.head.value === symbol.value) {

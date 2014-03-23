@@ -3,21 +3,46 @@
 'use strict';
 
 module.exports.gcd = function gcd(n1, n2) {
-  if(n1 === 0 || n2 === 0) {
-    return 1;
+  if(n1 instanceof Object || n2 instanceof Object) {
+    throw new Error('gcd: wrong usage!');
   }
   
-  if(n1 === n2) {
+  return gcd_(Math.abs(n1), Math.abs(n2));
+};
+
+function gcd_(n1, n2) {
+  if(n1 === 0 || n1 === n2) {
+    return n2;
+  }
+  if(n2 === 0) {
     return n1;
   }
   
+  if(n1 === 1 || n2 === 1) {
+    return 1;
+  }
+  
+  var n1_ = n1 % 2 === 0;
+  var n2_ = n2 % 2 === 0;
+  
+  if(n1_ && n2_) {
+    return 2 * gcd_(n1 / 2, n2 / 2);
+  }
+  
+  if(n1_) {
+    return gcd_(n1 / 2, n2);
+  }
+  if(n2_) {
+    return gcd_(n1, n2 / 2);
+  }
+  
   if(n1 > n2) {
-    return gcd(n1 - n2, n2);
+    return gcd_((n1 - n2) / 2, n2);
   }
   else {
-    return gcd(n1, n2 - n1);
+    return gcd_((n2 - n1) / 2, n1);
   }
-};
+}
 
 module.exports.getOperationPriority = function(value) {
   if(value === '+' || value === '-') {
