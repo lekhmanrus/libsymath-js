@@ -442,6 +442,25 @@ module.exports.addition = {
     test.strictEqual(root.childs[1].head.value, 3);
     
     test.done();
+  },
+  
+  bugfix1: function(test) {
+    var expression = new Expression('3/2 + 1/4').optimize(),
+        root = expression.getRoot();
+    
+    test.strictEqual(root.childs.length, 2);
+    test.strictEqual(root.head.type, 'operator');
+    test.strictEqual(root.head.value, '/');
+    
+    test.strictEqual(root.childs[0].childs, undefined);
+    test.strictEqual(root.childs[0].head.type, 'constant');
+    test.strictEqual(root.childs[0].head.value, 7);
+    
+    test.strictEqual(root.childs[1].childs, undefined);
+    test.strictEqual(root.childs[1].head.type, 'constant');
+    test.strictEqual(root.childs[1].head.value, 4);
+    
+    test.done();
   }
   
 };
@@ -790,21 +809,13 @@ module.exports.division = {
     
     root = expression.getRoot().childs[0];
     
-    test.strictEqual(root.childs.length, 2);
-    test.strictEqual(root.head.type, 'operator');
-    test.strictEqual(root.head.value, '*');
-    
-    test.strictEqual(root.childs[0].childs, undefined);
-    test.strictEqual(root.childs[0].head.type, 'literal');
-    test.strictEqual(root.childs[0].head.value, 'a');
-    
-    test.strictEqual(root.childs[1].childs, undefined);
-    test.strictEqual(root.childs[1].head.type, 'literal');
-    test.strictEqual(root.childs[1].head.value, 'd');
+    test.strictEqual(root.childs, undefined);
+    test.strictEqual(root.head.type, 'literal');
+    test.strictEqual(root.head.value, 'a');
     
     root = expression.getRoot().childs[1];
     
-    test.strictEqual(root.childs.length, 3);
+    test.strictEqual(root.childs.length, 4);
     test.strictEqual(root.head.type, 'operator');
     test.strictEqual(root.head.value, '*');
     
@@ -818,7 +829,11 @@ module.exports.division = {
     
     test.strictEqual(root.childs[2].childs, undefined);
     test.strictEqual(root.childs[2].head.type, 'literal');
-    test.strictEqual(root.childs[2].head.value, 'e');
+    test.strictEqual(root.childs[2].head.value, 'd');
+    
+    test.strictEqual(root.childs[3].childs, undefined);
+    test.strictEqual(root.childs[3].head.type, 'literal');
+    test.strictEqual(root.childs[3].head.value, 'e');
     
     test.done();
   },

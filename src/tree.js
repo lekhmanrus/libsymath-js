@@ -117,7 +117,16 @@ Leaf.prototype.getSeparableSymbols = function() {
   return [ this.head ];
 };
 
-Node.prototype.divide = function(root, symbol) {  
+Node.prototype.divide = function(root, symbol) {
+  symbol = JSON.parse(JSON.stringify(symbol));
+  return this.divide_(symbol);
+};
+Leaf.prototype.divide = function(root, symbol) {
+  symbol = JSON.parse(JSON.stringify(symbol));
+  return this.divide_(symbol);
+};
+
+Node.prototype.divide_ = function(symbol) {
   var i = 0, divided = symbol.value;
   
   if(this.head.type === 'operator') {
@@ -126,7 +135,7 @@ Node.prototype.divide = function(root, symbol) {
       divided = true;
       
       while(i < this.childs.length) {
-        divided = this.childs[i].divide(this, symbol) && divided;
+        divided = this.childs[i].divide_(symbol) && divided;
         ++i;
       }
       
@@ -139,7 +148,7 @@ Node.prototype.divide = function(root, symbol) {
     }
     
     else if(this.head.value === '/') {
-      if(!this.childs[0].divide(root, symbol)) {
+      if(!this.childs[0].divide_(symbol)) {
         this.childs[1] = new Node({ type: 'operator', value: '*' }, [this.childs[1], new Leaf(symbol)]);
       }
       return true;
@@ -150,7 +159,7 @@ Node.prototype.divide = function(root, symbol) {
         i = 0;
         
         while(i < this.childs.length) {
-          divided = this.childs[i].divide(this, symbol);
+          divided = this.childs[i].divide_(symbol);
           ++i;
           
           if(divided === true || divided === 1) {
@@ -168,7 +177,7 @@ Node.prototype.divide = function(root, symbol) {
   }
 };
 
-Leaf.prototype.divide = function(root, symbol) {
+Leaf.prototype.divide_ = function(symbol) {
   if(this.head.type !== symbol.type) {
     return false;
   }

@@ -535,7 +535,7 @@ rules.push(function commonDenominator(root) {
     for(i = 0; i < root.childs.length; ++i) {
       if(root.childs[i].head.type === 'operator' && root.childs[i].head.value === '/') {
         if(root.childs[i].childs.length < 2 || root.childs[i].childs[1] instanceof Node) {
-          return false;
+          return modified;
         }
         
         found = true;
@@ -543,7 +543,7 @@ rules.push(function commonDenominator(root) {
     }
     
     if(!found) {
-      return false;
+      return modified;
     }
     
     for(i = 0; i < root.childs.length; ++i) {
@@ -819,7 +819,7 @@ rules.push(function fractionsMultiplier(root) {
       }
     }
     if(!found) {
-      return false;
+      return modified;
     }
     
     for(i = 0; i < root.childs.length; ++i) {

@@ -84,10 +84,10 @@ module.exports.ComplexExpressions = {
       
   test2: function(test) {
     //var expression = new Expression('(((1/2) / (5/4) + (7/5) / (11/7) - (3/11))*3)/((3/2 + 1/4)/ (55/3) )').optimize();
-    var expression = new Expression('((4/10) + (49/55) + (3/11))/((3/2 + 1/4))').optimize();
+    var expression = new Expression('((4/10) + (49/55) + (3/11))/(3/2 + 1/4)').optimize();
     
     test.notStrictEqual(expression.getRoot(), undefined);
-    test.strictEqual(expression.getRoot().serializeTeX(), '32');
+    test.strictEqual(expression.getRoot().serializeTeX(), '\\frac{344}{385}');
     
     test.done();
   }
