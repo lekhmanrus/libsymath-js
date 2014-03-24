@@ -119,92 +119,106 @@ Leaf.prototype.getSeparableSymbols = function() {
 
 Node.prototype.divide = function(root, symbol) {
   symbol = JSON.parse(JSON.stringify(symbol));
-  return this.divide_(symbol);
+  
+  if(this.divideDry_(symbol) !== true) {
+    return false;
+  }
+  
+  // stub
+  return false;
+  //return this.divide_(symbol);
 };
 Leaf.prototype.divide = function(root, symbol) {
   symbol = JSON.parse(JSON.stringify(symbol));
-  return this.divide_(symbol);
+  
+  if(this.divideDry_(symbol) !== true) {
+    return false;
+  }
+  
+  // stub
+  return false;
+  //return this.divide_(symbol);
 };
 
-Node.prototype.divide_ = function(symbol) {
-  var i = 0, divided = symbol.value;
+Node.prototype.divideDry_ = function(symbol) {
+  var values = [], result, i;
   
-  if(this.head.type === 'operator') {
+  if(['+', '-'].indexOf(this.head.value) !== -1) {
+    for(i = 0; i < this.childs.length; ++i) {
+      values.push(this.childs[i].divideDry_(symbol));
+    }
+
+    result = true;
     
-    if(['+', '-'].indexOf(this.head.value) !== -1) {
-      divided = true;
-      
-      while(i < this.childs.length) {
-        divided = this.childs[i].divide_(symbol) && divided;
-        ++i;
+    for(i = 0; i < values.length; ++i) {
+      if(values[i] === false) {
+        return false;
+      }
+      if(values[i] === true) {
+        continue;
       }
       
-      return divided;
+      if(result === undefined) {
+        result = values[i];
+      }
+      else {
+        result = Utils.gcd(result, values[i]);
+      }
     }
     
-    else if(this.head.value === '^' && this.childs[0].head.type === symbol.type && this.childs[0].head.value === symbol.value) {
-      this.childs[1] = new Node({ type: 'operator', value: '-' }, [this.childs[1], new Leaf({ type: 'constant', value: 1 })]);
+    return result;
+  }
+  
+  if(this.head.value === '/') {
+    result = this.childs[0].divideDry_(symbol);
+    return result;
+  }
+  
+  if(this.head.value === '*') {
+    for(i = 0; i < this.childs.length; ++i) {
+      values.push(this.childs[i].divideDry_(symbol));
+    }
+
+    result = 0;
+    
+    for(i = 0; i < values.length; ++i) {
+      if(values[i] === false) {
+        continue;
+      }
+      if(values[i] === true) {
+        return true;
+      }
+      
+      result += values[i];
+    }
+    
+    
+    if(result === true || result >= symbol.value) {
       return true;
     }
-    
-    else if(this.head.value === '/') {
-      if(!this.childs[0].divide_(symbol)) {
-        this.childs[1] = new Node({ type: 'operator', value: '*' }, [this.childs[1], new Leaf(symbol)]);
-      }
-      return true;
-    }
-    
-    else {
-      while(divided !== true && divided !== false) {
-        i = 0;
-        
-        while(i < this.childs.length) {
-          divided = this.childs[i].divide_(symbol);
-          ++i;
-          
-          if(divided === true || divided === 1) {
-            divided = true;
-            break;
-          }
-          else if(divided !== false) {
-            symbol.value = divided;
-          }
-        }
-      }
-      
-      return divided;
-    }
+    return result;
+  }
+  
+  if(this.head.value === '^') {
+    return this.childs[0].head.type === symbol.type && this.childs[0].head.value === symbol.value;
   }
 };
 
-Leaf.prototype.divide_ = function(symbol) {
+Leaf.prototype.divideDry_ = function(symbol) {
   if(this.head.type !== symbol.type) {
     return false;
   }
   
-  if(this.head.type === 'constant' && (this.head.value % symbol.value) === 0) {
-    this.head.value /= symbol.value;
-    return true;
-  }
-  
   if(this.head.type === 'constant' && symbol.type === 'constant') {
     var current = Utils.gcd(this.head.value, symbol.value);
-    if(current === 1) {
-      return false;
-    }
-    
-    this.head.value /= current;
-    return symbol.value / current;
+    if(current === 1) { return false; }
+    if(current === symbol.value) { return true; }
+    return current;
   }
   
   if(this.head.type === 'literal' && this.head.value === symbol.value) {
-    this.head.type = 'constant';
-    this.head.value = 1;
-    
     return true;
   }
-  
-  return false;
 };
 
 Node.prototype.getSimpleMultPair = function() {
