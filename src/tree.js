@@ -124,9 +124,11 @@ Node.prototype.divide = function(root, symbol) {
     return false;
   }
   
-  // stub
-  return false;
-  //return this.divide_(symbol);
+  if(this.divide_(symbol) !== true) {
+    return false;
+  }
+  
+  return true;
 };
 Leaf.prototype.divide = function(root, symbol) {
   symbol = JSON.parse(JSON.stringify(symbol));
@@ -135,12 +137,16 @@ Leaf.prototype.divide = function(root, symbol) {
     return false;
   }
   
-  // stub
-  return false;
-  //return this.divide_(symbol);
+  if(this.divide_(symbol) !== true) {
+    return false;
+  }
+  
+  return true;
 };
 
 Node.prototype.divideDry_ = function(symbol) {
+  if(symbol.value === 1) { return true; }
+  
   var values = [], result, i;
   
   if(['+', '-'].indexOf(this.head.value) !== -1) {
@@ -158,7 +164,7 @@ Node.prototype.divideDry_ = function(symbol) {
         continue;
       }
       
-      if(result === undefined) {
+      if(result === true) {
         result = values[i];
       }
       else {
@@ -179,7 +185,7 @@ Node.prototype.divideDry_ = function(symbol) {
       values.push(this.childs[i].divideDry_(symbol));
     }
 
-    result = 0;
+    result = 1;
     
     for(i = 0; i < values.length; ++i) {
       if(values[i] === false) {
@@ -189,7 +195,7 @@ Node.prototype.divideDry_ = function(symbol) {
         return true;
       }
       
-      result += values[i];
+      result *= values[i];
     }
     
     
@@ -205,6 +211,8 @@ Node.prototype.divideDry_ = function(symbol) {
 };
 
 Leaf.prototype.divideDry_ = function(symbol) {
+  if(symbol.value === 1) { return true; }
+  
   if(this.head.type !== symbol.type) {
     return false;
   }
@@ -219,6 +227,119 @@ Leaf.prototype.divideDry_ = function(symbol) {
   if(this.head.type === 'literal' && this.head.value === symbol.value) {
     return true;
   }
+};
+
+Node.prototype.divide_ = function(symbol) {
+  if(symbol.value === 1) { return true; }
+  
+  var values = [], result, current, tmp, i;
+  
+  if(['+', '-'].indexOf(this.head.value) !== -1) {
+    current = this.divideDry_(symbol);
+    if(current === false) {
+      return false;
+    }
+    if(current !== true) {
+      symbol.value /= current;
+      symbol = JSON.parse(JSON.stringify(symbol));
+      symbol.value = current;
+    }
+    
+    for(i = 0; i < this.childs.length; ++i) {
+      this.childs[i].divide_(symbol);
+    }
+    
+    /*if(current !== true) {
+      symbol.value = current;
+    }*/
+    return current;
+  }
+  
+  if(this.head.value === '/') {
+    result = this.childs[0].divide_(symbol);
+    if(result !== true && result !== false) {
+      symbol.value /= result;
+    }
+    return result;
+  }
+  
+  if(this.head.value === '*') {
+    current = this.divideDry_(symbol);
+    if(current === false) {
+      return false;
+    }
+    if(current !== true) {
+      symbol.value /= current;
+      symbol = JSON.parse(JSON.stringify(symbol));
+      symbol.value = current;
+    }
+    
+    for(i = 0; i < this.childs.length; ++i) {
+      result = this.childs[i].divide_(symbol);
+
+      if(result === true) {
+        return current;
+      }
+      if(result === false) {
+        continue;
+      }
+
+      //symbol.value = result;
+    }
+    
+    /*if(current !== true) {
+      symbol.value = current;
+    }*/
+    return current;
+  }
+  
+  if(this.head.value === '^') {
+    result = false;
+    
+    if(this.childs[0].head.type === symbol.type && this.childs[0].head.value === symbol.value) {
+      var one = new Leaf({
+        type: 'constant',
+        value: 1
+      });
+      
+      this.childs[1] = new Node({
+        type: 'operator',
+        value: '-'
+      }, [ this.childs[1], one ]);
+      
+      result = true;
+    }
+    
+    return result;
+  }
+};
+
+Leaf.prototype.divide_ = function(symbol) {
+  if(symbol.value === 1) { return true; }
+  
+  if(this.head.type !== symbol.type) {
+    return false;
+  }
+  
+  if(this.head.type === 'constant' && symbol.type === 'constant') {
+    var current = Utils.gcd(this.head.value, symbol.value);
+    if(current === 1) { return false; }
+    
+    this.head.value /= current;
+    
+    if(current === symbol.value) { return true; }
+    symbol.value /= current;
+    
+    return current;
+  }
+  
+  if(this.head.type === 'literal' && this.head.value === symbol.value) {
+    this.head.type = 'constant';
+    this.head.value = 1;
+    return true;
+  }
+  
+  return false;
 };
 
 Node.prototype.getSimpleMultPair = function() {
@@ -365,19 +486,27 @@ Node.prototype.serializeTeX = function(priority) {
   }
   
   if(this.head.type === 'operator' && this.head.value === '/') {
-    return '\\frac{' + this.childs[0].serializeTeX() + '}{' + this.childs[1].serializeTeX() + '}';
+    var sign = '';
+    if(this.childs[0].head.type === 'constant' && this.childs[0].head.value < 0) {
+      sign = '-';
+    }
+    if(this.childs[1].head.type === 'constant' && this.childs[1].head.value < 0) {
+      sign = (sign === '-' ? '' : '-');
+    }
+    
+    return sign + '\\frac{' + this.childs[0].serializeTeX(0, true) + '}{' + this.childs[1].serializeTeX(0, true) + '}';
   }
   
   if(this.head.type === 'func' && this.head.value === 'sqrt') {    
     return '\\sqrt{' + this.childs[0].serializeTeX() + '}';
   }
   
-  if(this.head.type === 'func')
+  if(this.head.type === 'func') {
     return this.head.value + '(' + this.childs[0].serializeTeX() + ')';
-
+  }
 };
 
-Leaf.prototype.serializeTeX = function() {
+Leaf.prototype.serializeTeX = function(proirity, noSign) {
   if(this.head.type === 'complex') {
     if(this.head.value === -1)
       return '-i';
@@ -387,6 +516,10 @@ Leaf.prototype.serializeTeX = function() {
       return '';
     else
       return this.head.value + 'i';
+  }
+  
+  if(noSign && this.head.type === 'constant') {
+    return Math.abs(this.head.value) + '';
   }
   
   return this.head.value + '';
