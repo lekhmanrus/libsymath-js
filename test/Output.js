@@ -5,7 +5,21 @@
 var Expression = require('..').Expression;
 
 module.exports.Nicer = {
-  // TODO
+  
+  test1: function(test) {
+    var expression = new Expression('a * c * b + c * b').optimize().nice('factorized');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{b} {c} {({a}+{1})}');
+    
+    test.done();
+  },
+  
+  test2: function(test) {
+    var expression = new Expression('a * c * b + c * b + c * d + e * g * c').optimize().nice('factorized');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{c} {({{a} {b}}+{{e} {g}}+{b}+{d})}');
+    
+    test.done();
+  }
+  
 };
 
 module.exports.TeX = {

@@ -26,7 +26,6 @@ Node.prototype.reduce = function() {
   
   return this;
 };
-
 Leaf.prototype.reduce = function() { return this; };
 
 Node.prototype.getSeparableSymbols = function(isExtended) {
@@ -112,7 +111,6 @@ Node.prototype.getSeparableSymbols = function(isExtended) {
     return getAllSymbols(this, isExtended);
   }
 };
-
 Leaf.prototype.getSeparableSymbols = function() {
   return [ this.head ];
 };
@@ -209,7 +207,6 @@ Node.prototype.divideDry_ = function(symbol) {
     return this.childs[0].head.type === symbol.type && this.childs[0].head.value === symbol.value;
   }
 };
-
 Leaf.prototype.divideDry_ = function(symbol) {
   if(symbol.value === 1) { return true; }
   
@@ -313,7 +310,6 @@ Node.prototype.divide_ = function(symbol) {
     return result;
   }
 };
-
 Leaf.prototype.divide_ = function(symbol) {
   if(symbol.value === 1) { return true; }
   
@@ -365,7 +361,6 @@ Node.prototype.getSimpleMultPair = function() {
     };
   }
 };
-
 Leaf.prototype.getSimpleMultPair = function() {
   return false;
 };
@@ -384,7 +379,6 @@ Node.prototype.clone = function() {
     loc: this.head.loc
   }, childs);
 };
-
 Leaf.prototype.clone = function() {
   return new Leaf({
     type: this.head.type,
@@ -403,7 +397,6 @@ Node.prototype.isConstant = function() {
   
   return result;
 };
-
 Leaf.prototype.isConstant = function() {
   return this.head.type === 'constant'; 
 };
@@ -458,7 +451,6 @@ Node.prototype.getConstantValue = function() {
   
   return result;
 };
-
 Leaf.prototype.getConstantValue = function() {
   return this.head.type === 'constant' ? this.head.value : 0;
 };
@@ -505,7 +497,6 @@ Node.prototype.serializeTeX = function(priority) {
     return this.head.value + '(' + this.childs[0].serializeTeX() + ')';
   }
 };
-
 Leaf.prototype.serializeTeX = function(proirity, noSign) {
   if(this.head.type === 'complex') {
     if(this.head.value === -1)
@@ -540,33 +531,72 @@ Node.prototype.compare = function(rhs) {
   
   return true;
 };
-
 Leaf.prototype.compare = function(rhs) {
   return rhs instanceof Leaf && rhs.head.type === this.head.type && rhs.head.value === this.head.value;
 };
 
-Node.prototype.calcPowerValue = function() {
+Node.prototype.calcPowerValue = function() {  
   if(this.head.type === 'operator') {
     if(this.head.value === '*') {
-      this.power_ = this.childs.reduce(function(e, prev) {
+      this.power_ = this.childs.reduce(function(prev, e) {
         return prev + e.power_;
       }, 0);
+    }
+    
+    if(this.head.value === '+') {
+      var max = 0;
+      this.power_ = this.childs.forEach(function(e) {
+        if(e.power_ > max) {
+          max = e.power_;
+        }
+      });
+      
+      return max - 0.9;
     }
   }
   
   if(this.head.type === 'func') {
-    return this.power_ = 999;
+    this.power_ = 999;
+    return 999;
   }
 };
-
 Leaf.prototype.calcPowerValue = function() {
   if(this.head.type === 'constant' || this.head.type === 'complex') {
-    return this.power_ = 0;
+    this.power_ = 0;
+    return 0;
   }
   
   if(this.head.type === 'literal') {
-    return this.power_ = 1;
+    this.power_ = 1;
+    return 1;
   }
+};
+
+Node.prototype.niceFactorized = function() {
+  var i, parts, subtree;
+  
+  for(i = 0; i < this.childs.length; ++i) {
+    this.childs[i].niceFactorized();
+  }
+  
+  if(this.head.type === 'operator' && /\+|\-/.test(this.head.value)) {
+    parts = this.getSeparableSymbols();
+    if(parts.length === 0) {
+      return;
+    }
+    
+    subtree = this.clone();
+    for(i = 0; i < parts.length; ++i) {
+      subtree.divide(null, parts[i]);
+      parts[i] = new Leaf(parts[i]);
+    }
+    
+    this.childs = parts.concat(subtree);
+    this.head.value = '*';
+  }
+};
+Leaf.prototype.niceFactorized = function() {
+  // no need to `nice`
 };
 
 module.exports.Node = Node;

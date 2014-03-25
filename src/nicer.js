@@ -2,6 +2,8 @@
 /*global module */
 'use strict';
 
+var Optimizer = require('./optimizer.js');
+
 function Nicer(root, type) {
   if(type !== 'expenced' && type !== 'factorized') {
     throw new Error('wrong type!');
@@ -11,17 +13,18 @@ function Nicer(root, type) {
   this.type_ = type;
 }
 
-Nicer.prototype.niceExpanced = function(root) {
-  
-};
-
-Nicer.prototype.nice = function(root) {
+Nicer.prototype.nice = function() {
   if(this.type_ === 'expanced') {
-    this.niceExpanced(root);
+    this.root_.niceExpanced();
   }
   else {
-    this.niceFactorized(root);
+    this.root_.niceFactorized();
   }
+  
+  var optimizer = new Optimizer(this.root_);
+  optimizer.process();
+  
+  this.sort(this.root_);
 };
 
 Nicer.prototype.sort = function(root) {
@@ -34,7 +37,16 @@ Nicer.prototype.sort = function(root) {
     }
     
     root.childs = root.childs.sort(function(lhs, rhs) {
-      return lhs.power_ - rhs.power_;
+      if(lhs.head.type === 'literal' && rhs.head.type === 'literal') {
+        return lhs.head.value.localeCompare(rhs.head.value);
+      }
+      
+      return rhs.power_ - lhs.power_;
     });
   }
+  else {
+    root.calcPowerValue();
+  }
 };
+
+module.exports = Nicer;

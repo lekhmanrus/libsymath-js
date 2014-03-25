@@ -6,7 +6,8 @@ var Lexer     = require('./lexer'),
     Optimizer = require('./optimizer'),
     Node      = require('./tree').Node,
     Leaf      = require('./tree').Leaf,
-    Utils     = require('./utils');
+    Utils     = require('./utils'),
+    Nicer     = require('./nicer');
 
 function ExpressionTree(expressionString) {
   if(!expressionString) {
@@ -187,7 +188,7 @@ ExpressionTree.prototype.reduce = function() {
 
 ExpressionTree.prototype.optimize = function() {
   if(!this.privateRoot_ || this.optimized) {
-    return;
+    return this;
   }
   
   if(!this.reduced) {
@@ -203,7 +204,12 @@ ExpressionTree.prototype.optimize = function() {
 };
 
 ExpressionTree.prototype.nice = function(type) {
-  //TODO
+  var nicer = new Nicer(this.privateRoot_, type);
+  nicer.nice();
+  
+  this.optimized = false;
+  
+  return this;
 };
 
 ExpressionTree.prototype.getRoot = function() {
