@@ -33,16 +33,23 @@ Nicer.prototype.sort = function(root) {
   if(root.childs) {
     for(i = 0; i < root.childs.length; ++i) {
       this.sort(root.childs[i]);
-      root.childs[i].calcPowerValue();
     }
+    root.calcPowerValue();
     
-    root.childs = root.childs.sort(function(lhs, rhs) {
-      if(lhs.head.type === 'literal' && rhs.head.type === 'literal') {
-        return lhs.head.value.localeCompare(rhs.head.value);
-      }
-      
-      return rhs.power_ - lhs.power_;
-    });
+    if(/\+|\*/.test(root.head.value)) {
+      root.childs = root.childs.sort(function(lhs, rhs) {
+        if(lhs.head.type === 'literal' && rhs.head.type === 'literal') {
+          return lhs.head.value.localeCompare(rhs.head.value);
+        }
+        
+        if(root.head.value === '*') {
+          return lhs.power_ - rhs.power_;
+        }
+        else {
+          return rhs.power_ - lhs.power_;
+        }
+      });
+    }
   }
   else {
     root.calcPowerValue();

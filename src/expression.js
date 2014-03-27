@@ -216,4 +216,11 @@ ExpressionTree.prototype.getRoot = function() {
   return this.privateRoot_;
 };
 
+ExpressionTree.prototype.differentiate = function(base) {
+  this.optimize().nice('expanced');
+  this.privateRoot_.differentiate(base);
+  
+  return this;
+};
+
 module.exports = ExpressionTree;
