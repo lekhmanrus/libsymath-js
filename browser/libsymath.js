@@ -83,7 +83,8 @@ var Lexer     = require('./lexer'),
     Optimizer = require('./optimizer'),
     Node      = require('./tree').Node,
     Leaf      = require('./tree').Leaf,
-    Utils     = require('./utils');
+    Utils     = require('./utils'),
+    Nicer     = require('./nicer');
 
 function ExpressionTree(expressionString) {
   if(!expressionString) {
@@ -264,7 +265,7 @@ ExpressionTree.prototype.reduce = function() {
 
 ExpressionTree.prototype.optimize = function() {
   if(!this.privateRoot_ || this.optimized) {
-    return;
+    return this;
   }
   
   if(!this.reduced) {
@@ -279,12 +280,28 @@ ExpressionTree.prototype.optimize = function() {
   return this;
 };
 
+ExpressionTree.prototype.nice = function(type) {
+  var nicer = new Nicer(this.privateRoot_, type);
+  nicer.nice();
+  
+  this.optimized = false;
+  
+  return this;
+};
+
 ExpressionTree.prototype.getRoot = function() {
   return this.privateRoot_;
 };
 
+ExpressionTree.prototype.differentiate = function(base) {
+  this.optimize().nice('expanced');
+  this.privateRoot_.differentiate(base);
+  
+  return this;
+};
+
 module.exports = ExpressionTree;
-},{"./lexer":5,"./optimizer":6,"./tree":7,"./utils":8}],5:[function(require,module,exports){
+},{"./lexer":5,"./nicer":6,"./optimizer":7,"./tree":8,"./utils":9}],5:[function(require,module,exports){
 /*jslint white: true, node: true, plusplus: true, vars: true */
 /*global module */
 'use strict';
@@ -473,16 +490,88 @@ module.exports = Lexer;
 /*global module */
 'use strict';
 
+var Optimizer = require('./optimizer.js');
+
+function Nicer(root, type) {
+  if(type !== 'expanced' && type !== 'factorized') {
+    throw new Error('wrong type!');
+  }
+  
+  this.root_ = root;
+  this.type_ = type;
+}
+
+Nicer.prototype.nice = function() {
+  if(this.type_ === 'expanced') {
+    this.root_.niceExpanced();
+  }
+  else {
+    this.root_.niceFactorized();
+  }
+  
+  var optimizer = new Optimizer(this.root_, true);
+  optimizer.process();
+  
+  this.sort(this.root_);
+};
+
+Nicer.prototype.sort = function(root) {
+  var i;
+  
+  if(root.childs) {
+    for(i = 0; i < root.childs.length; ++i) {
+      this.sort(root.childs[i]);
+    }
+    root.calcPowerValue();
+    
+    if(/\+|\*/.test(root.head.value)) {
+      root.childs = root.childs.sort(function(lhs, rhs) {
+        if(lhs.head.type === 'literal' && rhs.head.type === 'literal') {
+          return lhs.head.value.localeCompare(rhs.head.value);
+        }
+        
+        if(root.head.value === '*') {
+          return lhs.power_ - rhs.power_;
+        }
+        else {
+          return rhs.power_ - lhs.power_;
+        }
+      });
+
+      var funcs = [];
+      for(i = 0; i < root.childs.length; ++i) {
+        if(root.childs[i].head.type === 'func') {
+          funcs.push(root.childs[i]);
+          root.childs.splice(i, 1);
+          --i;
+        }
+      }
+
+      root.childs = root.childs.concat(funcs);
+    }
+  }
+  else {
+    root.calcPowerValue();
+  }
+};
+
+module.exports = Nicer;
+},{"./optimizer.js":7}],7:[function(require,module,exports){
+/*jslint white: true, node: true, plusplus: true, vars: true, nomen: true, sub: true, bitwise: true */
+/*global module */
+'use strict';
+
 var Node  = require('./tree').Node,
     Leaf  = require('./tree').Leaf,
     Utils = require('./utils');
 
-function Optimizer(root) {
+function Optimizer(root, softMode) {
   if(!root) {
     throw new ReferenceError('root is not defined!');
   }
   
   this.root_ = root;
+  this.soft_ = softMode || false;
 }
 
 module.exports = Optimizer;
@@ -496,7 +585,7 @@ Optimizer.prototype.process = function() {
     this.root_.reduce();
     
     for(i = 0; i < rules.length; ++i) {
-      modified = rules[i](this.root_) || modified;
+      modified = rules[i](this.root_, this.soft_) || modified;
     }
   } while(modified);
 };
@@ -685,54 +774,48 @@ rules.push(function groupingByMultiplication(root) {
 });
 
 
-// 2 / 4 / 2 -> 2 / (4 * 2)
-// 6 / a / 3 / a -> (6 * a) / (a * 3)
+// (2 / 4) / 2 -> 2 / (4 * 2)
+// (6 / a) / (3 / a) -> (6 * a) / (a * 3)
 rules.push(function fractionsNormalization(root) {
   var modified = applyToChilds(root, fractionsNormalization);
   
   if(root.head.type === 'operator' && root.head.value === '/') {
-    var i, lhs = [], rhs = [];
-    
-    for(i = 0; i < Math.min(2, root.childs.length); ++i) {
-      if(i % 2 === 0) {
-        lhs.push(root.childs[i]);
+    if(root.childs.length == 2 && (root.childs[0].head.value === '/' || root.childs[1].head.value === '/')) {
+      var lhs = [], rhs = [];
+      
+      if(root.childs[0].head.value === '/') {
+        lhs.push(root.childs[0].childs[0]);
+        rhs.push(root.childs[0].childs[1]);
       }
       else {
-        rhs.push(root.childs[i]);
+        lhs.push(root.childs[0]);
       }
-    }
-    for(i = 2; i < root.childs.length; ++i) {
-      if(i % 2 === 1) {
-        lhs.push(root.childs[i]);
+      
+      if(root.childs[1].head.value === '/') {
+        lhs.push(root.childs[1].childs[1]);
+        rhs.push(root.childs[1].childs[0]);
       }
       else {
-        rhs.push(root.childs[i]);
+        rhs.push(root.childs[1]);
       }
+      
+      lhs = lhs.filter(function(e) { return e !== undefined; });
+      rhs = rhs.filter(function(e) { return e !== undefined; });
+      
+      root.childs = [
+        new Node({
+          type: 'operator',
+          value: '*'
+        }, lhs),
+        
+        new Node({
+          type: 'operator',
+          value: '*'
+        }, rhs)
+      ];
+      
+      return true;
     }
-    
-    modified = modified || lhs.length > 1 || rhs.length > 1;
-    
-    if(lhs.length > 1) {
-      lhs = new Node({
-        type: 'operator',
-        value: '*'
-      }, lhs);
-    }
-    else {
-      lhs = lhs[0];
-    }
-    
-    if(rhs.length > 1) {
-      rhs = new Node({
-        type: 'operator',
-        value: '*'
-      }, rhs);
-    }
-    else {
-      rhs = rhs[0];
-    }
-    
-    root.childs = [ lhs, rhs ];
   }
   
   return modified;
@@ -1002,7 +1085,11 @@ rules.push(function groupLiterals(root) {
 
 // 2/3 + 1/3 -> 3/3
 // 1 / 7 + 1 / 3 -> 10 / 21
-rules.push(function commonDenominator(root) {
+rules.push(function commonDenominator(root, soft) {
+  if(soft) {
+    return false;
+  }
+  
   var modified = applyToChilds(root, commonDenominator);
   
   if(root.head.type === 'operator' && ['+', '-'].indexOf(root.head.value) !== -1) {
@@ -1011,13 +1098,16 @@ rules.push(function commonDenominator(root) {
     
     for(i = 0; i < root.childs.length; ++i) {
       if(root.childs[i].head.type === 'operator' && root.childs[i].head.value === '/') {
+        if(root.childs[i].childs.length < 2 || root.childs[i].childs[1] instanceof Node) {
+          return modified;
+        }
+        
         found = true;
-        break;
       }
     }
     
     if(!found) {
-      return false;
+      return modified;
     }
     
     for(i = 0; i < root.childs.length; ++i) {
@@ -1293,7 +1383,7 @@ rules.push(function fractionsMultiplier(root) {
       }
     }
     if(!found) {
-      return false;
+      return modified;
     }
     
     for(i = 0; i < root.childs.length; ++i) {
@@ -1362,7 +1452,7 @@ rules.push(function stripDepth(root) {
   
   return modified;
 });
-},{"./tree":7,"./utils":8}],7:[function(require,module,exports){
+},{"./tree":8,"./utils":9}],8:[function(require,module,exports){
 /*jslint white: true, node: true, plusplus: true, vars: true */
 /*global module */
 'use strict';
@@ -1384,14 +1474,13 @@ Node.prototype.reduce = function() {
   for(i = 0; i < this.childs.length; ++i) {
     this.childs[i].reduce();
     
-    if(this.childs[i].head.type === 'operator' && this.head.type === 'operator' && this.childs[i].head.value === this.head.value) {
+    if(this.childs[i].head.type === 'operator' && this.head.type === 'operator' && this.childs[i].head.value === this.head.value && this.childs[i].head.value != '/') {
       this.childs = this.childs.slice(0, i).concat(this.childs[i].childs).concat(this.childs.slice(i + 1));
     }
   }
   
   return this;
 };
-
 Leaf.prototype.reduce = function() { return this; };
 
 Node.prototype.getSeparableSymbols = function(isExtended) {
@@ -1470,61 +1559,234 @@ Node.prototype.getSeparableSymbols = function(isExtended) {
       return getSharedExtendedSymbols(this);
     }
   }
+  else if(this.head.value === '/') {
+    return this.childs[0].getSeparableSymbols(isExtended);
+  }
   else {
     return getAllSymbols(this, isExtended);
   }
 };
-
 Leaf.prototype.getSeparableSymbols = function() {
   return [ this.head ];
 };
 
-Node.prototype.divide = function(root, symbol) {  
-  var i = 0, divided = false;
+Node.prototype.divide = function(root, symbol) {
+  symbol = JSON.parse(JSON.stringify(symbol));
   
-  if(this.head.type === 'operator') {
-    
-    if(['+', '-'].indexOf(this.head.value) !== -1) {
-      divided = true;
-      
-      while(i < this.childs.length) {
-        divided = this.childs[i].divide(this, symbol) && divided;
-        ++i;
-      }
-      
-      return divided;
-    }
-    
-    else if(this.head.value === '^' && this.childs[0].head.type === symbol.type && this.childs[0].head.value === symbol.value) {
-      this.childs[1] = new Node({ type: 'operator', value: '-' }, [this.childs[1], new Leaf({ type: 'constant', value: 1 })]);
-      return true;
-    }
-    
-    else {
-      while(i < this.childs.length && !divided) {
-        divided = this.childs[i].divide(this, symbol);
-        ++i;
-      }
-      
-      return divided;
-    }
+  if(this.divideDry_(symbol) !== true) {
+    return false;
   }
+  
+  if(this.divide_(symbol) !== true) {
+    return false;
+  }
+  
+  return true;
+};
+Leaf.prototype.divide = function(root, symbol) {
+  symbol = JSON.parse(JSON.stringify(symbol));
+  
+  if(this.divideDry_(symbol) !== true) {
+    return false;
+  }
+  
+  if(this.divide_(symbol) !== true) {
+    return false;
+  }
+  
+  return true;
 };
 
-Leaf.prototype.divide = function(root, symbol) {
+Node.prototype.divideDry_ = function(symbol) {
+  if(symbol.value === 1) { return true; }
+  
+  var values = [], result, i;
+  
+  if(['+', '-'].indexOf(this.head.value) !== -1) {
+    for(i = 0; i < this.childs.length; ++i) {
+      values.push(this.childs[i].divideDry_(symbol));
+    }
+
+    result = true;
+    
+    for(i = 0; i < values.length; ++i) {
+      if(values[i] === false) {
+        return false;
+      }
+      if(values[i] === true) {
+        continue;
+      }
+      
+      if(result === true) {
+        result = values[i];
+      }
+      else {
+        result = Utils.gcd(result, values[i]);
+      }
+    }
+    
+    return result;
+  }
+  
+  if(this.head.value === '/') {
+    result = this.childs[0].divideDry_(symbol);
+    return result;
+  }
+  
+  if(this.head.value === '*') {
+    for(i = 0; i < this.childs.length; ++i) {
+      values.push(this.childs[i].divideDry_(symbol));
+    }
+
+    result = 1;
+    
+    for(i = 0; i < values.length; ++i) {
+      if(values[i] === false) {
+        continue;
+      }
+      if(values[i] === true) {
+        return true;
+      }
+      
+      result *= values[i];
+    }
+    
+    
+    if(result === true || result >= symbol.value) {
+      return true;
+    }
+    return result;
+  }
+  
+  if(this.head.value === '^') {
+    return this.childs[0].head.type === symbol.type && this.childs[0].head.value === symbol.value;
+  }
+};
+Leaf.prototype.divideDry_ = function(symbol) {
+  if(symbol.value === 1) { return true; }
+  
   if(this.head.type !== symbol.type) {
     return false;
   }
   
-  if(this.head.type === 'constant' && (this.head.value % symbol.value) === 0) {
-    this.head.value /= symbol.value;
+  if(this.head.type === 'constant' && symbol.type === 'constant') {
+    var current = Utils.gcd(this.head.value, symbol.value);
+    if(current === 1) { return false; }
+    if(current === symbol.value) { return true; }
+    return current;
+  }
+  
+  if(this.head.type === 'literal' && this.head.value === symbol.value) {
     return true;
+  }
+};
+
+Node.prototype.divide_ = function(symbol) {
+  if(symbol.value === 1) { return true; }
+  
+  var values = [], result, current, tmp, i;
+  
+  if(['+', '-'].indexOf(this.head.value) !== -1) {
+    current = this.divideDry_(symbol);
+    if(current === false) {
+      return false;
+    }
+    if(current !== true) {
+      symbol.value /= current;
+      symbol = JSON.parse(JSON.stringify(symbol));
+      symbol.value = current;
+    }
+    
+    for(i = 0; i < this.childs.length; ++i) {
+      this.childs[i].divide_(symbol);
+    }
+    
+    /*if(current !== true) {
+      symbol.value = current;
+    }*/
+    return current;
+  }
+  
+  if(this.head.value === '/') {
+    result = this.childs[0].divide_(symbol);
+    if(result !== true && result !== false) {
+      symbol.value /= result;
+    }
+    return result;
+  }
+  
+  if(this.head.value === '*') {
+    current = this.divideDry_(symbol);
+    if(current === false) {
+      return false;
+    }
+    if(current !== true) {
+      symbol.value /= current;
+      symbol = JSON.parse(JSON.stringify(symbol));
+      symbol.value = current;
+    }
+    
+    for(i = 0; i < this.childs.length; ++i) {
+      result = this.childs[i].divide_(symbol);
+
+      if(result === true) {
+        return current;
+      }
+      if(result === false) {
+        continue;
+      }
+
+      //symbol.value = result;
+    }
+    
+    /*if(current !== true) {
+      symbol.value = current;
+    }*/
+    return current;
+  }
+  
+  if(this.head.value === '^') {
+    result = false;
+    
+    if(this.childs[0].head.type === symbol.type && this.childs[0].head.value === symbol.value) {
+      var one = new Leaf({
+        type: 'constant',
+        value: 1
+      });
+      
+      this.childs[1] = new Node({
+        type: 'operator',
+        value: '-'
+      }, [ this.childs[1], one ]);
+      
+      result = true;
+    }
+    
+    return result;
+  }
+};
+Leaf.prototype.divide_ = function(symbol) {
+  if(symbol.value === 1) { return true; }
+  
+  if(this.head.type !== symbol.type) {
+    return false;
+  }
+  
+  if(this.head.type === 'constant' && symbol.type === 'constant') {
+    var current = Utils.gcd(this.head.value, symbol.value);
+    if(current === 1) { return false; }
+    
+    this.head.value /= current;
+    
+    if(current === symbol.value) { return true; }
+    symbol.value /= current;
+    
+    return current;
   }
   
   if(this.head.type === 'literal' && this.head.value === symbol.value) {
     this.head.type = 'constant';
     this.head.value = 1;
-    
     return true;
   }
   
@@ -1554,7 +1816,6 @@ Node.prototype.getSimpleMultPair = function() {
     };
   }
 };
-
 Leaf.prototype.getSimpleMultPair = function() {
   return false;
 };
@@ -1573,7 +1834,6 @@ Node.prototype.clone = function() {
     loc: this.head.loc
   }, childs);
 };
-
 Leaf.prototype.clone = function() {
   return new Leaf({
     type: this.head.type,
@@ -1592,7 +1852,6 @@ Node.prototype.isConstant = function() {
   
   return result;
 };
-
 Leaf.prototype.isConstant = function() {
   return this.head.type === 'constant'; 
 };
@@ -1647,7 +1906,6 @@ Node.prototype.getConstantValue = function() {
   
   return result;
 };
-
 Leaf.prototype.getConstantValue = function() {
   return this.head.type === 'constant' ? this.head.value : 0;
 };
@@ -1659,9 +1917,12 @@ Node.prototype.serializeTeX = function(priority) {
       currentPriority = Utils.getOperationPriority(this.head.value);
   
   if(this.head.type === 'operator' && ['-', '+', '*', '^'].indexOf(this.head.value) !== -1) {
+    var op = this.head.value;
+    if(this.head.value === '*'/* && this.childs[0].type === 'constant'*/)
+      op = ' ';
     result = this.childs.map(function(e) {
       return e.serializeTeX(currentPriority);
-    }).join('} ' + this.head.value + ' {');
+    }).join('}' + op + '{');
     
     if(currentPriority < priority) {
       return '({' + result + '})';
@@ -1672,7 +1933,15 @@ Node.prototype.serializeTeX = function(priority) {
   }
   
   if(this.head.type === 'operator' && this.head.value === '/') {
-    return '\\frac{' + this.childs[0].serializeTeX() + '}{' + this.childs[1].serializeTeX() + '}';
+    var sign = '';
+    if(this.childs[0].head.type === 'constant' && this.childs[0].head.value < 0) {
+      sign = '-';
+    }
+    if(this.childs[1].head.type === 'constant' && this.childs[1].head.value < 0) {
+      sign = (sign === '-' ? '' : '-');
+    }
+    
+    return sign + '\\frac{' + this.childs[0].serializeTeX(0, true) + '}{' + this.childs[1].serializeTeX(0, true) + '}';
   }
   
   if(this.head.type === 'func' && this.head.value === 'sqrt') {    
@@ -1680,25 +1949,30 @@ Node.prototype.serializeTeX = function(priority) {
   }
   
   if(this.head.type === 'func') {
-    var prefix = '';
-    if(['sin', 'cos'].indexOf(this.head.value) !== -1) {
-      prefix = '\\';
-    }
-    
-    return prefix + this.head.value + '( ' + this.childs[0].serializeTeX() + ' )';
+    return this.head.value + '(' + this.childs[0].serializeTeX() + ')';
   }
 };
-
-Leaf.prototype.serializeTeX = function() {
+Leaf.prototype.serializeTeX = function(proirity, noSign) {
   if(this.head.type === 'complex') {
-    return this.head.value + 'i ';
+    if(this.head.value === -1)
+      return '-i';
+    else if(this.head.value === 1)
+      return 'i';
+    else if(this.head.value === 0)
+      return '';
+    else
+      return this.head.value + 'i';
+  }
+  
+  if(noSign && this.head.type === 'constant') {
+    return Math.abs(this.head.value) + '';
   }
   
   return this.head.value + '';
 };
 
 Node.prototype.compare = function(rhs) {
-  if(!(rhs instanceof Leaf) || rhs.head.type !== this.head.type || rhs.head.value !== this.head.value || this.childs.length != rhs.childs.length) {
+  if(!(rhs instanceof Node) || rhs.head.type !== this.head.type || rhs.head.value !== this.head.value || this.childs.length != rhs.childs.length) {
    return false; 
   }
   
@@ -1712,34 +1986,380 @@ Node.prototype.compare = function(rhs) {
   
   return true;
 };
-
 Leaf.prototype.compare = function(rhs) {
   return rhs instanceof Leaf && rhs.head.type === this.head.type && rhs.head.value === this.head.value;
 };
 
+Node.prototype.calcPowerValue = function() {  
+  if(this.head.type === 'operator') {
+    if(this.head.value === '*') {
+      this.power_ = this.childs.reduce(function(prev, e) {
+        return prev + e.power_;
+      }, 0);
+
+      return this.power_;
+    }
+
+    if(this.head.value === '*') {
+      this.power_ = this.childs[0].power_ - this.childs[1].power_ + 0.05;
+      return this.power_;
+    }
+    
+    if(/\-|\+/.test(this.head.value)) {
+      var max = 0;
+      this.childs.forEach(function(e) {
+        if(e.power_ > max) {
+          max = e.power_;
+        }
+      });
+
+      this.power_ = max + 0.07;
+      return this.power_;
+    }
+
+    if(this.head.value === '^') {
+      this.power_ = this.childs[0].power_ * (this.childs[1].power_ + 1) + 0.1;
+      return this.power_;
+    }
+  }
+  
+  if(this.head.type === 'func') {
+    this.power_ = -1;
+    return this.power_;
+  }
+};
+Leaf.prototype.calcPowerValue = function() {
+  if(this.head.type === 'constant' || this.head.type === 'complex') {
+    this.power_ = 0;
+    return 0;
+  }
+  
+  if(this.head.type === 'literal') {
+    this.power_ = 1;
+    return 1;
+  }
+};
+
+Node.prototype.niceFactorized = function() {
+  var i, parts, subtree;
+  
+  for(i = 0; i < this.childs.length; ++i) {
+    this.childs[i].niceFactorized();
+  }
+  
+  if(this.head.type === 'operator' && /\+|\-/.test(this.head.value)) {
+    parts = this.getSeparableSymbols();
+    if(parts.length === 0) {
+      return;
+    }
+    
+    subtree = this.clone();
+    for(i = 0; i < parts.length; ++i) {
+      subtree.divide(null, parts[i]);
+      parts[i] = new Leaf(parts[i]);
+    }
+    
+    this.childs = parts.concat(subtree);
+    this.head.value = '*';
+  }
+};
+Leaf.prototype.niceFactorized = function() {
+  // no need to `nice`
+};
+
+Node.prototype.niceExpanced = function() {
+  var i, j, tmp, current, pluses = [], minuses = [];
+  
+  for(i = 0; i < this.childs.length; ++i) {
+    this.childs[i].niceExpanced();
+  }
+  
+  if(this.head.type === 'operator' && this.head.value === '*') {
+    for(i = 0; i < this.childs.length; ++i) {
+      current = this.childs[i];
+      if(current.head.type === 'operator' && current.head.value === '+') {
+        for(j = 0; j < current.childs.length; ++j) {
+          tmp = this.clone();
+          tmp.childs[i] = current.childs[j];
+          pluses.push(tmp);
+        }
+      }
+      else if(current.head.type === 'operator' && current.head.value === '-') {
+        for(j = 0; j < current.childs.length; ++j) {
+          tmp = this.clone();
+          tmp.childs[i] = current.childs[j];
+          minuses.push(tmp);
+        }
+      }
+    }
+  }
+  
+  else if(this.head.type === 'operator' && this.head.value === '/') {
+    current = this.childs[0];
+    if(current.head.type === 'operator' && current.head.value === '+') {
+      for(j = 0; j < current.childs.length; ++j) {
+        tmp = this.clone();
+        tmp.childs[0] = current.childs[j];
+        pluses.push(tmp);
+      }
+    }
+    else if(current.head.type === 'operator' && current.head.value === '-') {
+      for(j = 0; j < current.childs.length; ++j) {
+        tmp = this.clone();
+        tmp.childs[0] = current.childs[j];
+        minuses.push(tmp);
+      }
+    }
+  }
+  
+  if(pluses.length > 0) {
+    this.head.value = '+';
+    this.childs = pluses;
+    
+    if(minuses.length > 0) {
+      this.childs.push(new Node({
+        type: 'operator',
+        value: '-'
+      }, minuses));
+    }
+    
+    for(i = 0; i < this.childs.length; ++i) {
+      this.childs[i].niceExpanced();
+    }
+    
+    return;
+  }
+  if(minuses.length > 0) {
+    this.head.value = '-';
+    this.childs = minuses;
+    
+    for(i = 0; i < this.childs.length; ++i) {
+      this.childs[i].niceExpanced();
+    }
+    
+    return;
+  }
+};
+Leaf.prototype.niceExpanced = function() {
+  // no need to `nice`
+};
+
+Node.prototype.differentiate = function(base) {
+  var i, constants = [], deps = [], f, df, g, dg;
+
+  if(!this.depends(base) || this.childs.length === 0) {
+    this.head.value = 0;
+    this.head.type  = 'constant';
+  }
+
+  if(this.head.type === 'func') {
+    // TODO(not implemented)
+    throw new Error('function differentiation isn\'t implemented yet!');
+
+    return this;
+  }
+
+  if(this.head.type === 'operator') {
+
+    if(this.head.value === '*') {
+      // test for simple case
+      for(i = 0; i < this.childs.length; ++i) {
+        if(this.childs[i].depends(base)) {
+          deps.push(this.childs[i]);
+        }
+        else {
+          constants.push(this.childs[i]);
+        }
+      }
+
+      f = deps[0].clone();
+      g = deps.slice(1, deps.length - 1);
+      if(g.length > 1) {
+        g = new Node()
+      }
+      else if(g.length === 1) {
+        g = g[0];
+      }
+      else {
+        g = new Leaf({ type: 'constant', value: 1 });
+      }
+
+      df = f.clone().differentiate(base);
+      dg = g.clone().differentiate(base);
+
+      this.childs = constants;
+
+      var tree = new Node({
+          type: 'operator',
+          value: '+'
+        }, []);
+
+      tree.childs.push(new Node({
+          type: 'operator',
+          value: '*'
+        }, [ g, df ]));
+      tree.childs.push(new Node({
+          type: 'operator',
+          value: '*'
+        }, [ dg.clone(), f.clone() ]));
+
+      this.childs.push(tree);
+      return this;
+    }
+
+    if(this.head.value === '/') {
+      f = this.childs[0];
+      g = this.childs[1];
+
+      df = f.clone().differentiate(base);
+      dg = g.clone().differentiate(base);
+
+      this.childs[0] = new Node({
+        type: 'operator',
+        value: '-'
+      }, []);
+
+      this.childs[0].childs.push(new Node({
+        type: 'operator',
+        value: '*'
+      }, [ df, g ]));
+
+      this.childs[0].childs.push(new Node({
+        type: 'operator',
+        value: '*'
+      }, [ dg, f ]));
+
+      this.childs[1] = new Node({
+        type: 'operator',
+        value: '^'
+      }, [ g, new Leaf({ type: 'constant', value: 2 }) ]);
+
+      return this;
+    }
+
+    if(/\+|\-/.test(this.head.value)) {
+      for(i = 0; i < this.childs.length; ++i) {
+        this.childs[i].differentiate(base);
+      }
+
+      return this;
+    }
+
+    if(this.head.value === '^') {
+      if(this.childs[0].depends(base)) {
+        var c = this.childs[1];
+        var x = this.clone();
+
+        x.childs[1] = new Node({
+          type: 'operator',
+          value: '-'
+        }, [ c.clone(), new Leaf({ type: 'constant', value: 1 }) ]);
+
+        this.head.value = '*';
+        this.childs = [ c, x ];
+
+        if(x.childs[0] instanceof Node) {
+          this.childs.push(x.childs[0].clone().differentiate(base));
+        }
+
+        return this;
+      }
+      else {
+        this.childs = [this.clone(), new Node({
+          type: 'func',
+          value: 'ln'
+        }, [ this.childs[0].clone() ])];
+        this.head.value = '*';
+
+        return this;
+      }
+    }
+
+  }
+};
+Leaf.prototype.differentiate = function(base) {
+  if(this.head.type === 'constant') {
+    this.head.value = 0;
+    return this;
+  }
+
+  if(this.head.type === 'literal') {
+    this.head.type  = 'constant';
+    this.head.value = (this.head.value === base ? 1 : 0);
+    return this;
+  }
+
+  if(this.head.type === 'complex') {
+    // TODO(not implemented)
+    throw new Error('complex differentiation isn\'t implemented yet!');
+
+    return this;
+  }
+};
+
+Node.prototype.depends = function(base) {
+  var i;
+
+  for(i = 0; i < this.childs.length; ++i) {
+    if(this.childs[i].depends(base)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+Leaf.prototype.depends = function(base) {
+  return this.head.type === 'literal' && this.head.value === base;
+};
+
 module.exports.Node = Node;
 module.exports.Leaf = Leaf;
-},{"./utils":8}],8:[function(require,module,exports){
+},{"./utils":9}],9:[function(require,module,exports){
 /*jslint white: true, node: true, plusplus: true, vars: true */
 /*global module */
 'use strict';
 
 module.exports.gcd = function gcd(n1, n2) {
-  if(n1 === 0 || n2 === 0) {
-    return 1;
+  if(n1 instanceof Object || n2 instanceof Object) {
+    throw new Error('gcd: wrong usage!');
   }
   
-  if(n1 === n2) {
+  return gcd_(Math.abs(n1), Math.abs(n2));
+};
+
+function gcd_(n1, n2) {
+  if(n1 === 0 || n1 === n2) {
+    return n2;
+  }
+  if(n2 === 0) {
     return n1;
   }
   
+  if(n1 === 1 || n2 === 1) {
+    return 1;
+  }
+  
+  var n1_ = n1 % 2 === 0;
+  var n2_ = n2 % 2 === 0;
+  
+  if(n1_ && n2_) {
+    return 2 * gcd_(n1 / 2, n2 / 2);
+  }
+  
+  if(n1_) {
+    return gcd_(n1 / 2, n2);
+  }
+  if(n2_) {
+    return gcd_(n1, n2 / 2);
+  }
+  
   if(n1 > n2) {
-    return gcd(n1 - n2, n2);
+    return gcd_((n1 - n2) / 2, n2);
   }
   else {
-    return gcd(n1, n2 - n1);
+    return gcd_((n2 - n1) / 2, n1);
   }
-};
+}
 
 module.exports.getOperationPriority = function(value) {
   if(value === '+' || value === '-') {

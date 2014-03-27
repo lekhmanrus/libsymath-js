@@ -517,7 +517,7 @@ Leaf.prototype.serializeTeX = function(proirity, noSign) {
 };
 
 Node.prototype.compare = function(rhs) {
-  if(!(rhs instanceof Leaf) || rhs.head.type !== this.head.type || rhs.head.value !== this.head.value || this.childs.length != rhs.childs.length) {
+  if(!(rhs instanceof Node) || rhs.head.type !== this.head.type || rhs.head.value !== this.head.value || this.childs.length != rhs.childs.length) {
    return false; 
   }
   
@@ -541,23 +541,36 @@ Node.prototype.calcPowerValue = function() {
       this.power_ = this.childs.reduce(function(prev, e) {
         return prev + e.power_;
       }, 0);
+
+      return this.power_;
+    }
+
+    if(this.head.value === '*') {
+      this.power_ = this.childs[0].power_ - this.childs[1].power_ + 0.05;
+      return this.power_;
     }
     
-    if(this.head.value === '+') {
+    if(/\-|\+/.test(this.head.value)) {
       var max = 0;
-      this.power_ = this.childs.forEach(function(e) {
+      this.childs.forEach(function(e) {
         if(e.power_ > max) {
           max = e.power_;
         }
       });
-      
-      return max - 0.9;
+
+      this.power_ = max + 0.07;
+      return this.power_;
+    }
+
+    if(this.head.value === '^') {
+      this.power_ = this.childs[0].power_ * (this.childs[1].power_ + 1) + 0.1;
+      return this.power_;
     }
   }
   
   if(this.head.type === 'func') {
-    this.power_ = 999;
-    return 999;
+    this.power_ = -1;
+    return this.power_;
   }
 };
 Leaf.prototype.calcPowerValue = function() {
@@ -674,6 +687,174 @@ Node.prototype.niceExpanced = function() {
 };
 Leaf.prototype.niceExpanced = function() {
   // no need to `nice`
+};
+
+Node.prototype.differentiate = function(base) {
+  var i, constants = [], deps = [], f, df, g, dg;
+
+  if(!this.depends(base) || this.childs.length === 0) {
+    this.head.value = 0;
+    this.head.type  = 'constant';
+  }
+
+  if(this.head.type === 'func') {
+    // TODO(not implemented)
+    throw new Error('function differentiation isn\'t implemented yet!');
+
+    return this;
+  }
+
+  if(this.head.type === 'operator') {
+
+    if(this.head.value === '*') {
+      // test for simple case
+      for(i = 0; i < this.childs.length; ++i) {
+        if(this.childs[i].depends(base)) {
+          deps.push(this.childs[i]);
+        }
+        else {
+          constants.push(this.childs[i]);
+        }
+      }
+
+      f = deps[0].clone();
+      g = deps.slice(1, deps.length - 1);
+      if(g.length > 1) {
+        g = new Node()
+      }
+      else if(g.length === 1) {
+        g = g[0];
+      }
+      else {
+        g = new Leaf({ type: 'constant', value: 1 });
+      }
+
+      df = f.clone().differentiate(base);
+      dg = g.clone().differentiate(base);
+
+      this.childs = constants;
+
+      var tree = new Node({
+          type: 'operator',
+          value: '+'
+        }, []);
+
+      tree.childs.push(new Node({
+          type: 'operator',
+          value: '*'
+        }, [ g, df ]));
+      tree.childs.push(new Node({
+          type: 'operator',
+          value: '*'
+        }, [ dg.clone(), f.clone() ]));
+
+      this.childs.push(tree);
+      return this;
+    }
+
+    if(this.head.value === '/') {
+      f = this.childs[0];
+      g = this.childs[1];
+
+      df = f.clone().differentiate(base);
+      dg = g.clone().differentiate(base);
+
+      this.childs[0] = new Node({
+        type: 'operator',
+        value: '-'
+      }, []);
+
+      this.childs[0].childs.push(new Node({
+        type: 'operator',
+        value: '*'
+      }, [ df, g ]));
+
+      this.childs[0].childs.push(new Node({
+        type: 'operator',
+        value: '*'
+      }, [ dg, f ]));
+
+      this.childs[1] = new Node({
+        type: 'operator',
+        value: '^'
+      }, [ g, new Leaf({ type: 'constant', value: 2 }) ]);
+
+      return this;
+    }
+
+    if(/\+|\-/.test(this.head.value)) {
+      for(i = 0; i < this.childs.length; ++i) {
+        this.childs[i].differentiate(base);
+      }
+
+      return this;
+    }
+
+    if(this.head.value === '^') {
+      if(this.childs[0].depends(base)) {
+        var c = this.childs[1];
+        var x = this.clone();
+
+        x.childs[1] = new Node({
+          type: 'operator',
+          value: '-'
+        }, [ c.clone(), new Leaf({ type: 'constant', value: 1 }) ]);
+
+        this.head.value = '*';
+        this.childs = [ c, x ];
+
+        if(x.childs[0] instanceof Node) {
+          this.childs.push(x.childs[0].clone().differentiate(base));
+        }
+
+        return this;
+      }
+      else {
+        this.childs = [this.clone(), new Node({
+          type: 'func',
+          value: 'ln'
+        }, [ this.childs[0].clone() ])];
+        this.head.value = '*';
+
+        return this;
+      }
+    }
+
+  }
+};
+Leaf.prototype.differentiate = function(base) {
+  if(this.head.type === 'constant') {
+    this.head.value = 0;
+    return this;
+  }
+
+  if(this.head.type === 'literal') {
+    this.head.type  = 'constant';
+    this.head.value = (this.head.value === base ? 1 : 0);
+    return this;
+  }
+
+  if(this.head.type === 'complex') {
+    // TODO(not implemented)
+    throw new Error('complex differentiation isn\'t implemented yet!');
+
+    return this;
+  }
+};
+
+Node.prototype.depends = function(base) {
+  var i;
+
+  for(i = 0; i < this.childs.length; ++i) {
+    if(this.childs[i].depends(base)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+Leaf.prototype.depends = function(base) {
+  return this.head.type === 'literal' && this.head.value === base;
 };
 
 module.exports.Node = Node;
