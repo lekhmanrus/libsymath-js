@@ -18,6 +18,76 @@ module.exports.Nicer = {
     test.strictEqual(expression.getRoot().serializeTeX(), '{c} {({{a} {b}}+{{e} {g}}+{b}+{d})}');
     
     test.done();
+  },
+  
+  test3: function(test) {
+    var expression = new Expression('(a + b)* c').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{a} {c}}+{{b} {c}}');
+    
+    test.done();
+  },
+  
+  test4: function(test) {
+    var expression = new Expression('(a + b + d)* c').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{a} {c}}+{{b} {c}}+{{c} {d}}');
+    
+    test.done();
+  },
+  
+  test5: function(test) {
+    var expression = new Expression('(a - b - d)* c').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{a} {c}}-{{b} {c}}-{{c} {d}}');
+    
+    test.done();
+  },
+  
+  test6: function(test) {
+    var expression = new Expression('(a - b + d)* c').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{{a} {c}}-{{b} {c}}}+{{c} {d}}');
+    
+    test.done();
+  },
+  
+  test7: function(test) {
+    var expression = new Expression('(a + b - d)* c').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{{a} {c}}+{{b} {c}}}-{{c} {d}}');
+    
+    test.done();
+  },
+  
+  test8: function(test) {
+    var expression = new Expression('(a + b - d + e)* c').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{{{a} {c}}+{{b} {c}}}-{{c} {d}}}+{{c} {e}}');
+    
+    test.done();
+  },
+  
+  test9: function(test) {
+    var expression = new Expression('(a + b - d*e)* c').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{{a} {c}}+{{b} {c}}}-{{c} {d} {e}}');
+    
+    test.done();
+  },
+  
+  test10: function(test) {
+    var expression = new Expression('a + b - d*e').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{a}+{b}}-{{d} {e}}');
+    
+    test.done();
+  },
+  
+  test11: function(test) {
+    var expression = new Expression('(a + b) / e').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{\\frac{a}{e}}+{\\frac{b}{e}}');
+    
+    test.done();
+  },
+  
+  test12: function(test) {
+    var expression = new Expression('(a - b + e) / e').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{\\frac{a}{e}}-{\\frac{b}{e}}}+{1}');
+    
+    test.done();
   }
   
 };

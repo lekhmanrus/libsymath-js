@@ -599,5 +599,82 @@ Leaf.prototype.niceFactorized = function() {
   // no need to `nice`
 };
 
+Node.prototype.niceExpanced = function() {
+  var i, j, tmp, current, pluses = [], minuses = [];
+  
+  for(i = 0; i < this.childs.length; ++i) {
+    this.childs[i].niceExpanced();
+  }
+  
+  if(this.head.type === 'operator' && this.head.value === '*') {
+    for(i = 0; i < this.childs.length; ++i) {
+      current = this.childs[i];
+      if(current.head.type === 'operator' && current.head.value === '+') {
+        for(j = 0; j < current.childs.length; ++j) {
+          tmp = this.clone();
+          tmp.childs[i] = current.childs[j];
+          pluses.push(tmp);
+        }
+      }
+      else if(current.head.type === 'operator' && current.head.value === '-') {
+        for(j = 0; j < current.childs.length; ++j) {
+          tmp = this.clone();
+          tmp.childs[i] = current.childs[j];
+          minuses.push(tmp);
+        }
+      }
+    }
+  }
+  
+  else if(this.head.type === 'operator' && this.head.value === '/') {
+    current = this.childs[0];
+    if(current.head.type === 'operator' && current.head.value === '+') {
+      for(j = 0; j < current.childs.length; ++j) {
+        tmp = this.clone();
+        tmp.childs[0] = current.childs[j];
+        pluses.push(tmp);
+      }
+    }
+    else if(current.head.type === 'operator' && current.head.value === '-') {
+      for(j = 0; j < current.childs.length; ++j) {
+        tmp = this.clone();
+        tmp.childs[0] = current.childs[j];
+        minuses.push(tmp);
+      }
+    }
+  }
+  
+  if(pluses.length > 0) {
+    this.head.value = '+';
+    this.childs = pluses;
+    
+    if(minuses.length > 0) {
+      this.childs.push(new Node({
+        type: 'operator',
+        value: '-'
+      }, minuses));
+    }
+    
+    for(i = 0; i < this.childs.length; ++i) {
+      this.childs[i].niceExpanced();
+    }
+    
+    return;
+  }
+  if(minuses.length > 0) {
+    this.head.value = '-';
+    this.childs = minuses;
+    
+    for(i = 0; i < this.childs.length; ++i) {
+      this.childs[i].niceExpanced();
+    }
+    
+    return;
+  }
+};
+Leaf.prototype.niceExpanced = function() {
+  // no need to `nice`
+};
+
 module.exports.Node = Node;
 module.exports.Leaf = Leaf;

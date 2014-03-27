@@ -6,12 +6,13 @@ var Node  = require('./tree').Node,
     Leaf  = require('./tree').Leaf,
     Utils = require('./utils');
 
-function Optimizer(root) {
+function Optimizer(root, softMode) {
   if(!root) {
     throw new ReferenceError('root is not defined!');
   }
   
   this.root_ = root;
+  this.soft_ = softMode || false;
 }
 
 module.exports = Optimizer;
@@ -25,7 +26,7 @@ Optimizer.prototype.process = function() {
     this.root_.reduce();
     
     for(i = 0; i < rules.length; ++i) {
-      modified = rules[i](this.root_) || modified;
+      modified = rules[i](this.root_, this.soft_) || modified;
     }
   } while(modified);
 };
@@ -525,7 +526,11 @@ rules.push(function groupLiterals(root) {
 
 // 2/3 + 1/3 -> 3/3
 // 1 / 7 + 1 / 3 -> 10 / 21
-rules.push(function commonDenominator(root) {
+rules.push(function commonDenominator(root, soft) {
+  if(soft) {
+    return false;
+  }
+  
   var modified = applyToChilds(root, commonDenominator);
   
   if(root.head.type === 'operator' && ['+', '-'].indexOf(root.head.value) !== -1) {

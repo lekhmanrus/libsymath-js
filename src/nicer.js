@@ -5,7 +5,7 @@
 var Optimizer = require('./optimizer.js');
 
 function Nicer(root, type) {
-  if(type !== 'expenced' && type !== 'factorized') {
+  if(type !== 'expanced' && type !== 'factorized') {
     throw new Error('wrong type!');
   }
   
@@ -21,7 +21,7 @@ Nicer.prototype.nice = function() {
     this.root_.niceFactorized();
   }
   
-  var optimizer = new Optimizer(this.root_);
+  var optimizer = new Optimizer(this.root_, true);
   optimizer.process();
   
   this.sort(this.root_);
