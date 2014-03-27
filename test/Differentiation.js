@@ -113,5 +113,29 @@ module.exports.Simple = {
     test.strictEqual(result, '{2} {x} {{y}^{2}}');
     test.done();
   },
+
+  test10: function(test) {
+    var result = new Expression('y^x')
+        .optimize()
+        .differentiate('x')
+        .nice('expanced')
+        .getRoot()
+          .serializeTeX();
+    
+    test.strictEqual(result, '{{y}^{x}} {ln(y)}');
+    test.done();
+  },
+
+  test11: function(test) {
+    var result = new Expression('(3*x)/y')
+        .optimize()
+        .differentiate('x')
+        .nice('expanced')
+        .getRoot()
+          .serializeTeX();
+    
+    test.strictEqual(result, '\\frac{3}{y}');
+    test.done();
+  },
   
 };

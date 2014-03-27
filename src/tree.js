@@ -753,7 +753,32 @@ Node.prototype.differentiate = function(base) {
     }
 
     if(this.head.value === '/') {
-      // TODO(not implemented)
+      f = this.childs[0];
+      g = this.childs[1];
+
+      df = f.clone().differentiate(base);
+      dg = g.clone().differentiate(base);
+
+      this.childs[0] = new Node({
+        type: 'operator',
+        value: '-'
+      }, []);
+
+      this.childs[0].childs.push(new Node({
+        type: 'operator',
+        value: '*'
+      }, [ df, g ]));
+
+      this.childs[0].childs.push(new Node({
+        type: 'operator',
+        value: '*'
+      }, [ dg, f ]));
+
+      this.childs[1] = new Node({
+        type: 'operator',
+        value: '^'
+      }, [ g, new Leaf({ type: 'constant', value: 2 }) ]);
+
       return this;
     }
 
@@ -785,7 +810,12 @@ Node.prototype.differentiate = function(base) {
         return this;
       }
       else {
-        //
+        this.childs = [this.clone(), new Node({
+          type: 'func',
+          value: 'ln'
+        }, [ this.childs[0].clone() ])];
+        this.head.value = '*';
+
         return this;
       }
     }

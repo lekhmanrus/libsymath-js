@@ -49,6 +49,17 @@ Nicer.prototype.sort = function(root) {
           return rhs.power_ - lhs.power_;
         }
       });
+
+      var funcs = [];
+      for(i = 0; i < root.childs.length; ++i) {
+        if(root.childs[i].head.type === 'func') {
+          funcs.push(root.childs[i]);
+          root.childs.splice(i, 1);
+          --i;
+        }
+      }
+
+      root.childs = root.childs.concat(funcs);
     }
   }
   else {
