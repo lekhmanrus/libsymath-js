@@ -88,6 +88,18 @@ module.exports.Nicer = {
     test.strictEqual(expression.getRoot().serializeTeX(), '{{\\frac{a}{e}}-{\\frac{b}{e}}}+{1}');
     
     test.done();
+  },
+  
+  test13: function(test) {
+    var expression = new Expression('x*y*z + x*y + x*z + x*y*z').optimize().nice('expanded');
+    
+    // TODO
+  },
+  
+  test14: function(test) {
+    var expression = new Expression('x*y*z + x*y + x*z + x*y*z').optimize().nice('factorized');
+    
+    // TODO
   }
   
 };
