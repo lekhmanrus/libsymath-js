@@ -695,6 +695,8 @@ Node.prototype.differentiate = function(base) {
   if(!this.depends(base) || this.childs.length === 0) {
     this.head.value = 0;
     this.head.type  = 'constant';
+    this.childs = undefined;
+    this['__proto__'] = Leaf;
   }
 
   if(this.head.type === 'func') {
