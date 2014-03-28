@@ -16,8 +16,8 @@ else {
   module.exports.Lexer = require('./src/lexer.js');
   module.exports.Expression = require('./src/expression.js');
 }
-}).call(this,require("/home/user/libsymath-js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),"/")
-},{"./src/expression.js":4,"./src/lexer.js":5,"/home/user/libsymath-js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":3}],"libsymath":[function(require,module,exports){
+}).call(this,require("/home/den/libsymath-js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),"/")
+},{"./src/expression.js":4,"./src/lexer.js":5,"/home/den/libsymath-js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":3}],"libsymath":[function(require,module,exports){
 module.exports=require('Focm2+');
 },{}],3:[function(require,module,exports){
 // shim for using process in browser
@@ -1004,14 +1004,13 @@ rules.push(function fractionConstantsReduction(root) {
   return modified;
 });
 
-
 // 2 * a + 3 * a -> 5 * a
 rules.push(function groupLiterals(root) {
   var modified = applyToChilds(root, groupLiterals),
       i, pair, current,
       literals = { };
   
-  if(root.head.type === 'operator' && ['+', '-'].indexOf(root.head.value) !== -1) {
+  if(root.head.type === 'operator' && ['+', '-'].indexOf(root.head.value) !== -1 && root.childs.length != 1) {
     for(i = 0; i < root.childs.length; ++i) {
       pair = root.childs[i].getSimpleMultPair();
       if(pair) {
@@ -1035,6 +1034,9 @@ rules.push(function groupLiterals(root) {
         if(root.head.value === '+') {
           if(literals[root.childs[i].head.value]) {
             literals[root.childs[i].head.value] += 1;
+            
+            root.childs.splice(i, 1);
+            --i;
             modified = true;
           }
           else {
@@ -1044,15 +1046,15 @@ rules.push(function groupLiterals(root) {
         else {
           if(literals[root.childs[i].head.value]) {
             literals[root.childs[i].head.value] -= 1;
+            
+            root.childs.splice(i, 1);
+            --i;
             modified = true;
           }
           else {
             literals[root.childs[i].head.value] = modified ? -1 : 1;
           }
         }
-        
-        root.childs.splice(i, 1);
-        --i;
       }
     }
     
@@ -1062,11 +1064,22 @@ rules.push(function groupLiterals(root) {
       if(pair) {
         current = root.childs[i].childs;
         current[current[0].head.type === 'constant' ? 0 : 1].head.value = literals[pair.literal];
-        delete literals[pair.literal];
+      }
+      else if(root.childs[i].head.type === 'literal') {
+        if(literals[root.childs[i].head.value] === 1) {
+          continue;
+        }
+
+        root.childs[i] = new Node({ type: 'operator', value: '*' }, [
+          new Leaf({ type: 'constant', value: literals[root.childs[i].head.value] }),
+          root.childs[i]
+        ]);
+        modified = true;
       }
     }
     
-    for(i in literals) {
+
+    /*for(i in literals) {
       if(literals[i] !== 1) {
         root.childs.push(new Node({ type: 'operator', value: '*' }, [
           new Leaf({ type: 'constant', value: literals[i] }),
@@ -1075,6 +1088,47 @@ rules.push(function groupLiterals(root) {
       }
       else {
         root.childs.push(new Leaf({ type: 'literal', value: i }));
+      }
+    }*/
+  }
+  
+  return modified;
+});
+
+
+// a*b*c + a*b*c -> 2*a*b*c
+rules.push(function groupSame(root) {
+  var modified = applyToChilds(root, groupSame),
+      i, current, literals,
+      parts = new Utils.Map(treeComparer);
+  
+  if(root.head.type === 'operator' && ['+', '-'].indexOf(root.head.value) !== -1) {
+    for(i = 0; i < root.childs.length; ++i) {      
+      current = parts.get(root.childs[i]);
+      if(current) {
+        parts.set(root.childs[i], (root.head.value === '+' ? current + 1 : current - 1));
+        root.childs.splice(i, 1);
+        --i;
+      }
+      else {
+        parts.set(root.childs[i], 1);
+      }
+    }
+
+    for(i = 0; i < root.childs.length; ++i) {
+      current = parts.get(root.childs[i]);
+      if(current === 1) {
+        continue;
+      }
+      if(current !== 0) {
+        root.childs[i] = new Node({
+          type: 'operator',
+          value: '*'
+        }, [ new Leaf({ type: 'constant', value: current }), root.childs[i] ]);
+      }
+      else {
+        root.childs.splice(i, 1);
+        --i;
       }
     }
   }
@@ -2313,6 +2367,37 @@ Node.prototype.depends = function(base) {
 };
 Leaf.prototype.depends = function(base) {
   return this.head.type === 'literal' && this.head.value === base;
+};
+
+Node.prototype.getLiterals = function() {
+  var literals = [], current, i;
+
+  if(this.head.type === 'operator' && this.head.value === '*') {
+    for(i = 0; i < this.childs.length; ++i) {
+      current = this.childs[i].getLiterals();
+      if(current) {
+        literals.push(current);
+      }
+    }
+
+    if(literals.length > 1) {
+      return new Node({
+        type: 'operator',
+        value: '*'
+      }, literals);
+    }
+    else if(literals.length === 1) {
+      return literals[0];
+    }
+  }
+};
+Leaf.prototype.getLiterals = function() {
+  if(this.head.type !== 'literal') {
+    return undefined;
+  }
+  else {
+    return this.clone();
+  }
 };
 
 module.exports.Node = Node;

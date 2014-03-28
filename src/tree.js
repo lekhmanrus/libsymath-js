@@ -860,5 +860,36 @@ Leaf.prototype.depends = function(base) {
   return this.head.type === 'literal' && this.head.value === base;
 };
 
+Node.prototype.getLiterals = function() {
+  var literals = [], current, i;
+
+  if(this.head.type === 'operator' && this.head.value === '*') {
+    for(i = 0; i < this.childs.length; ++i) {
+      current = this.childs[i].getLiterals();
+      if(current) {
+        literals.push(current);
+      }
+    }
+
+    if(literals.length > 1) {
+      return new Node({
+        type: 'operator',
+        value: '*'
+      }, literals);
+    }
+    else if(literals.length === 1) {
+      return literals[0];
+    }
+  }
+};
+Leaf.prototype.getLiterals = function() {
+  if(this.head.type !== 'literal') {
+    return undefined;
+  }
+  else {
+    return this.clone();
+  }
+};
+
 module.exports.Node = Node;
 module.exports.Leaf = Leaf;

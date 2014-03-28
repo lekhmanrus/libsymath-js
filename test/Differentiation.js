@@ -173,5 +173,17 @@ module.exports.Simple = {
     test.strictEqual(result, '0');
     test.done();
   },
+
+  test15: function(test) {
+    var result = new Expression('x^n')
+        .optimize()
+        .differentiate('x')
+        .nice('expanced')
+        .getRoot()
+          .serializeTeX();
+    
+    test.strictEqual(result, '{n} {{x}^{({n}-{1})}}');
+    test.done();
+  },
   
 };

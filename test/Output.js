@@ -91,15 +91,17 @@ module.exports.Nicer = {
   },
   
   test13: function(test) {
-    var expression = new Expression('x*y*z + x*y + x*z + x*y*z').optimize().nice('expanded');
-    
-    // TODO
+    var expression = new Expression('x*y*z + x*y + x*z + x*y*z').optimize().nice('expanced');
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{2} {x} {y} {z}}+{{x} {y}}+{{x} {z}}');
+
+    test.done();
   },
   
   test14: function(test) {
     var expression = new Expression('x*y*z + x*y + x*z + x*y*z').optimize().nice('factorized');
-    
-    // TODO
+    test.strictEqual(expression.getRoot().serializeTeX(), '{x} {({{2} {y} {z}}+{y}+{z})}');
+
+    test.done();
   }
   
 };
@@ -165,6 +167,15 @@ module.exports.TeX = {
     
     test.notStrictEqual(expression.getRoot(), undefined);
     test.strictEqual(expression.getRoot().serializeTeX(), '0');
+    
+    test.done();
+  },
+
+  test8: function(test) {
+    var expression = new Expression('a - 1').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeTeX(), '{a}-{1}');
     
     test.done();
   }
