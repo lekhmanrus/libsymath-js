@@ -16,8 +16,8 @@ else {
   module.exports.Lexer = require('./src/lexer.js');
   module.exports.Expression = require('./src/expression.js');
 }
-}).call(this,require("/home/den/libsymath-js/node_modules/grunt-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),"/")
-},{"./src/expression.js":4,"./src/lexer.js":5,"/home/den/libsymath-js/node_modules/grunt-browserify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":3}],"libsymath":[function(require,module,exports){
+}).call(this,require("/home/user/libsymath-js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),"/")
+},{"./src/expression.js":4,"./src/lexer.js":5,"/home/user/libsymath-js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":3}],"libsymath":[function(require,module,exports){
 module.exports=require('Focm2+');
 },{}],3:[function(require,module,exports){
 // shim for using process in browser
@@ -2150,6 +2150,9 @@ Node.prototype.differentiate = function(base) {
   if(!this.depends(base) || this.childs.length === 0) {
     this.head.value = 0;
     this.head.type  = 'constant';
+    this.childs = undefined;
+    this['__proto__'] = Leaf.prototype;
+    return;
   }
 
   if(this.head.type === 'func') {
@@ -2419,4 +2422,4 @@ Map.prototype.idx_ = function(key) {
 };
 
 module.exports.Map = Map;
-},{}]},{},["Focm2+"])
+},{}]},{},["Focm2+"]);

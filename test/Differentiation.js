@@ -162,4 +162,16 @@ module.exports.Simple = {
     test.done();
   },
   
+  test14: function(test) {
+    var result = new Expression('y + z')
+        .optimize()
+        .differentiate('x')
+        .nice('expanced')
+        .getRoot()
+          .serializeTeX();
+    
+    test.strictEqual(result, '0');
+    test.done();
+  },
+  
 };
