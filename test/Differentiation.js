@@ -138,4 +138,28 @@ module.exports.Simple = {
     test.done();
   },
   
+  test12: function(test) {
+    var result = new Expression('y + x + y')
+        .optimize()
+        .differentiate('y')
+        .nice('expanced')
+        .getRoot()
+          .serializeTeX();
+    
+    test.strictEqual(result, '2');
+    test.done();
+  },
+  
+  test13: function(test) {
+    var result = new Expression('y + 2')
+        .optimize()
+        .differentiate('x')
+        .nice('expanced')
+        .getRoot()
+          .serializeTeX();
+    
+    test.strictEqual(result, '0');
+    test.done();
+  },
+  
 };
