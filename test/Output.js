@@ -212,3 +212,79 @@ module.exports.ComplexExpressions = {
   }
     
 };
+
+module.exports.Text = {
+  
+  test1: function(test) {
+    var expression = new Expression('30 * b * c * c').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeText(), 'b * c ^ 2 * 30');
+    
+    test.done();
+  },
+  
+  test2: function(test) {
+    var expression = new Expression('b * b * b / b').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeText(), 'b ^ 2');
+    
+    test.done();
+  },
+  
+  test3: function(test) {
+    var expression = new Expression('b ^ (1/2) / b').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeText(), 'b ^ (-1/2)');
+    
+    test.done();
+  },
+  
+  test4: function(test) {
+    var expression = new Expression('a + a + b').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeText(), 'a * 2 + b');
+    
+    test.done();
+  },
+  
+  test5: function(test) {
+    var expression = new Expression('1/3 * 21/7').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeText(), '1');
+    
+    test.done();
+  },
+  
+  test6: function(test) {
+    var expression = new Expression('1/2 + 1/4').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeText(), '3/4');
+    
+    test.done();
+  },
+  
+  test7: function(test) {
+    var expression = new Expression('a - a').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeText(), '0');
+    
+    test.done();
+  },
+
+  test8: function(test) {
+    var expression = new Expression('a - 1').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeText(), 'a - 1');
+    
+    test.done();
+  }
+  
+};
