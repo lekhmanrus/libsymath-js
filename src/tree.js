@@ -526,7 +526,10 @@ Node.prototype.serializeText = function(priority) {
     result = this.childs.map(function(e) {
       return e.serializeText(currentPriority);
     }).join(' ' + this.head.value + ' ');
-    return result.trim();
+    if(currentPriority < priority)
+      return '(' + result.trim() + ')';
+    else
+      return result.trim();
   }
   
   if(this.head.type === 'operator' && this.head.value === '/') {
