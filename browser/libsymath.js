@@ -16,8 +16,8 @@ else {
   module.exports.Lexer = require('./src/lexer.js');
   module.exports.Expression = require('./src/expression.js');
 }
-}).call(this,require("/home/den/libsymath-js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),"/")
-},{"./src/expression.js":4,"./src/lexer.js":5,"/home/den/libsymath-js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":3}],"libsymath":[function(require,module,exports){
+}).call(this,require("/home/l/Desktop/libsymath-js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),"/")
+},{"./src/expression.js":4,"./src/lexer.js":5,"/home/l/Desktop/libsymath-js/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":3}],"libsymath":[function(require,module,exports){
 module.exports=require('Focm2+');
 },{}],3:[function(require,module,exports){
 // shim for using process in browser
@@ -2007,6 +2007,56 @@ Node.prototype.serializeTeX = function(priority) {
   }
 };
 Leaf.prototype.serializeTeX = function(proirity, noSign) {
+  if(this.head.type === 'complex') {
+    if(this.head.value === -1)
+      return '-i';
+    else if(this.head.value === 1)
+      return 'i';
+    else if(this.head.value === 0)
+      return '';
+    else
+      return this.head.value + 'i';
+  }
+  
+  if(noSign && this.head.type === 'constant') {
+    return Math.abs(this.head.value) + '';
+  }
+  
+  return this.head.value + '';
+};
+
+Node.prototype.serializeText = function(priority) {
+  priority = priority || -1;
+  
+  var result = '',
+      currentPriority = Utils.getOperationPriority(this.head.value);
+  
+  if(this.head.type === 'operator' && ['-', '+', '*', '^'].indexOf(this.head.value) !== -1) {
+    result = this.childs.map(function(e) {
+      return e.serializeText(currentPriority);
+    }).join(' ' + this.head.value + ' ');
+    return result.trim();
+  }
+  
+  if(this.head.type === 'operator' && this.head.value === '/') {
+    var sign = '';
+    if(this.childs[0].head.type === 'constant' && this.childs[0].head.value < 0) {
+      sign = '-';
+    }
+    if(this.childs[1].head.type === 'constant' && this.childs[1].head.value < 0) {
+      sign = (sign === '-' ? '' : '-');
+    }
+    if(sign === '-')
+      return '(' + sign + this.childs[0].serializeText(0, true) + '/' + this.childs[1].serializeText(0, true) + ')';
+    else
+      return this.childs[0].serializeText(0, true) + '/' + this.childs[1].serializeText(0, true);
+  }
+
+  if(this.head.type === 'func') {
+    return this.head.value + '(' + this.childs[0].serializeText() + ')';
+  }
+};
+Leaf.prototype.serializeText = function(proirity, noSign) {
   if(this.head.type === 'complex') {
     if(this.head.value === -1)
       return '-i';
