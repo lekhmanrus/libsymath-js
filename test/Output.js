@@ -178,6 +178,33 @@ module.exports.TeX = {
     test.strictEqual(expression.getRoot().serializeTeX(), '{a}-{1}');
     
     test.done();
+  },
+
+  test9: function(test) {
+    var expression = new Expression('i - 1').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeTeX(), '{i}-{1}');
+    
+    test.done();
+  },
+
+  test10: function(test) {
+    var expression = new Expression('2 * i - 1').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeTeX(), '{{i} {2}}-{1}');
+    
+    test.done();
+  },
+
+  test11: function(test) {
+    var expression = new Expression('-i - 1').optimize();
+    
+    test.notStrictEqual(expression.getRoot(), undefined);
+    test.strictEqual(expression.getRoot().serializeTeX(), '{-i}-{1}');
+    
+    test.done();
   }
   
 };
